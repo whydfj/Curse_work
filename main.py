@@ -1,3 +1,6 @@
+from fastapi import FastAPI
+
+
 import sqlite3 as sq
 
 with sq.connect("Coursework.db") as con:
