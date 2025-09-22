@@ -49,8 +49,9 @@ with sq.connect("Coursework.db") as con:
     create table User_settings(
         employee_id INTEGER NOT NULL,
         theme_style INTEGER CHECK(theme_style >= 0 AND theme_style <= 1) DEFAULT 0,
-        language_app TEXT CHECK(role IN ('russian', 'english','Belarusian')) DEFAULT 'russian',
+        language_app TEXT CHECK(language_app IN ('russian', 'english','Belarusian')) DEFAULT 'russian',
         avatar BlOB,
+        
         FOREIGN KEY (employee_id) REFERENCES Users(id)
     )''')
 
