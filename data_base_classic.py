@@ -1,7 +1,7 @@
 import sqlite3 as sq
 
 with sq.connect("Coursework.db") as con:
-    cur = con.cursor()  # выбираем эту БД
+    cur = con.cursor()
 
     cur.execute('''drop table if exists Users;''')
     cur.execute('''
@@ -12,7 +12,7 @@ with sq.connect("Coursework.db") as con:
         role TEXT CHECK(role IN ('manager', 'employee')) DEFAULT 'employee',
         name varchar(45),
         surname varchar(45),
-        created_at TEXT default (datetime('now'))
+        created_at TEXT default (datetime('now','+3 hour'))
     )''')
 
     cur.execute('''drop table if exists Tasks;''')
@@ -22,10 +22,10 @@ with sq.connect("Coursework.db") as con:
         employee_id INTEGER NOT NULL,
         title VARCHAR(100),
         description TEXT,
-        deadline TEXT default (datetime('now','+30 day')),
+        deadline TEXT default (datetime('now','+3 hour','+30 day')),
         status TEXT CHECK(status IN ('running', 'completed','frozen')) DEFAULT 'running',
         progress INTEGER CHECK(progress >= 0 AND progress <= 100) DEFAULT 0,
-        created_at TEXT default (datetime('now')),
+        created_at TEXT default (datetime('now','+3 hour')),
 
         FOREIGN KEY (employee_id) REFERENCES Users(id)
     )''')
@@ -38,7 +38,7 @@ with sq.connect("Coursework.db") as con:
             user_id INTEGER NOT NULL,
             `text` TEXT,
             attached_file BLOB,
-            created_at TEXT default (datetime('now')),
+            created_at TEXT default (datetime('now','+3 hour')),
 
             FOREIGN KEY (task_id) REFERENCES Tasks(id),
             FOREIGN KEY (user_id) REFERENCES Users(id)
