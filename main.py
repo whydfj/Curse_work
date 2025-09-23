@@ -14,7 +14,6 @@ def main_page():
     return {"message": "Welcome to main page!"}
 
 
-
 @app.get("/data")
 def all_data():
     return {"messaejhcbhwjkadjcEQJBVCHWJDage": "Типа вывелась вся бд"}
