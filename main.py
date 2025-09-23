@@ -28,7 +28,8 @@ app = FastAPI()
 async def login_by_admin(user: User_Schema):
     with new_session() as session:
         # ПРАВИЛЬНО: параметры как словарь вторым аргументом
-        result = session.select(Users)
+        result = session.execute(text("SELECT * FROM Users WHERE username = :username"), {"username": user.username})
+        return result
         #сам с этим говном разбирайся
 
 @app.get("/")
@@ -44,4 +45,8 @@ def main_page():
 def all_data():
     return {"message": "Типа вывелась вся бд"}
 
+
+@app.get("/get")
+def all():
+    return {"message": "Типа вывелась вся бд"}
 
