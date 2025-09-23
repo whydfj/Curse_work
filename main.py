@@ -1,4 +1,21 @@
-from fastapi import FastAPI,HTTPException
+from fastapi import FastAPI, HTTPException
+from authx import AuthX, AuthXConfig
+from pydantic import BaseModel, Field
+
+
+class User(BaseModel):
+    username: str = Field(max_length=60)
+
+
+
+
+config = AuthXConfig()
+
+config.JWT_ACCESS_COOKIE_NAME = "aboba"
+config.JWT_SECRET_KEY = "test-secret-key"
+config.JWT_TOKEN_LOCATION = ["cookies"]
+
+security = AuthX(config=config)
 
 
 app = FastAPI()
@@ -16,3 +33,5 @@ def main_page():
 @app.get("/data")
 def all_data():
     return {"message": "Типа вывелась вся бд"}
+
+
