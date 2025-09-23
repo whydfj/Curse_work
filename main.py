@@ -1,4 +1,4 @@
-from fastapi import FastAPI#перешли на 3.12
+from fastapi import FastAPI#перешли на 3.12 теперь точно
 
 
 app = FastAPI()
