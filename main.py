@@ -13,4 +13,6 @@ def main_page():
 def all_data():
     return {"message": "Типа вывелась вся бд"}
 
+Давид я ебал твой 3.12
 
+а я твою яву
