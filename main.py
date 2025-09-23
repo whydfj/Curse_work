@@ -1,4 +1,4 @@
-from fastapi import FastAPI#перешли на 3.12 теперь точно jfjfjfЛАЛЛАЛА
+from fastapi import FastAPI,HTTPException
 
 
 app = FastAPI()
@@ -6,19 +6,13 @@ app = FastAPI()
 
 @app.get("/")
 def main_page():
-    "qjfhwejdhwejhd"
     p = 0
     if p == 2:
         return {"qq": 1}
 
-    return {"message": "Welcome to main page!"}
+    raise HTTPException(status_code=404,detail="не найдено(")
 
 
 @app.get("/data")
 def all_data():
-    return {"messaejhcbhwjkadjcEQJBVCHWJDage": "Типа вывелась вся бд"}
-
-
-
-
-#k;wehbdcjedc popa pisya
+    return {"message": "Типа вывелась вся бд"}
