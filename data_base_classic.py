@@ -64,3 +64,4 @@ with sq.connect("Coursework.db") as con:
         VALUES('user','123456','employee','Aleksander','Shnaider')
     ''')
 
+    #redach datatfjfjjf
