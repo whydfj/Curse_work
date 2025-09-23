@@ -6,6 +6,7 @@ app = FastAPI()
 
 @app.get("/")
 def main_page():
+    "qjfhwejdhwejhd"
     p = 0
     if p == 2:
         return {"qq": 1}
