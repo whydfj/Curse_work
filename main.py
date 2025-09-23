@@ -6,7 +6,12 @@ app = FastAPI()
 
 @app.get("/")
 def main_page():
+    p = 0
+    if p == 2:
+        return {"qq": 1}
+
     return {"message": "Welcome to main page!"}
+
 
 
 @app.get("/data")
