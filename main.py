@@ -17,7 +17,7 @@ def main_page():
 
 @app.get("/data")
 def all_data():
-    return {"message": "Типа вывелась вся бд"}
+    return {"messaejhcbhwjkadjcEQJBVCHWJDage": "Типа вывелась вся бд"}
 
 
 
