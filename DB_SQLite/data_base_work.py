@@ -3,6 +3,6 @@ from sqlalchemy.orm import sessionmaker
 
 
 #Подключение к бд
-engine = create_engine("sqlite:///Coursework.db")
+engine = create_engine("sqlite+pysqlite:///Coursework.db")
 
-new_session = sessionmaker(bind=engine)
+#with engine.connect() as connection:

@@ -1,6 +1,6 @@
 import sqlite3 as sq
 
-with sq.connect("Coursework.db") as con:
+with sq.connect("../Coursework.db") as con:
     cur = con.cursor()
 
     cur.execute('''drop table if exists Users;''')
