@@ -57,9 +57,9 @@ with sq.connect("../Coursework.db") as con:
 
     cur.execute('''
         INSERT INTO Users(username,password_hash,role,name,surname)
-        VALUES('admin','password','manager','Ivan','Ivanov')
-    ''')
+        VALUES('admin','344b8a854221bd1eaf9382daaea1996fbcd496f158e983f8835c7ef5084c55bb','manager','Ivan','Ivanov')
+    ''')#пароль для админа - password
     cur.execute('''
         INSERT INTO Users(username,password_hash,role,name,surname)
-        VALUES('user','123456','employee','Aleksander','Shnaider')
-    ''')
+        VALUES('user','4361be62001d25deb2bd85fab3e46011afae57539026d8d37d57f45e29571271','employee','Aleksander','Shnaider')
+    ''')#пароль для user 123456

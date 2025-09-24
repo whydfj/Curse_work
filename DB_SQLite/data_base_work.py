@@ -1,8 +1,64 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Text, BLOB
+from sqlalchemy.orm import relationship, sessionmaker, declarative_base
 
 #Подключение к бд
-engine = create_engine("sqlite+pysqlite:///Coursework.db")
+engine = create_engine("sqlite+pysqlite:///../Coursework.db")
+Base = declarative_base()
 
-#with engine.connect() as connection:
+class User(Base):
+    __tablename__ = "Users"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(60))
+    password_hash = Column(String(256))
+    role = Column(String(10))
+    name = Column(String(45))
+    surname = Column(String(45))
+    created_at = Column(String)
+
+    tasks = relationship("Task", back_populates="employee")
+    comments = relationship("Comment", back_populates="user")
+    settings = relationship("UserSettings", back_populates="user")
+
+class Task(Base):
+    __tablename__ = 'Tasks'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    employee_id = Column(Integer, ForeignKey('Users.id'))
+    title = Column(String(100))
+    description = Column(Text)
+    deadline = Column(String)
+    status = Column(String(10))
+    progress = Column(Integer)
+    created_at = Column(String)
+
+    employee = relationship("User", back_populates="tasks")
+    comments = relationship("Comment", back_populates="task")
+
+
+class Comment(Base):
+    __tablename__ = 'Comments'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    task_id = Column(Integer, ForeignKey('Tasks.id'))
+    user_id = Column(Integer, ForeignKey('Users.id'))
+    text = Column(Text)
+    attached_file = Column(BLOB)
+    created_at = Column(String)
+
+    task = relationship("Task", back_populates="comments")
+    user = relationship("User", back_populates="comments")
+
+
+class UserSettings(Base):
+    __tablename__ = 'User_settings'
+
+    employee_id = Column(Integer, ForeignKey('Users.id'), primary_key=True)
+    theme_style = Column(Integer)
+    language_app = Column(String(15))
+    avatar = Column(BLOB)
+
+    user = relationship("User", back_populates="settings")
+
+Session = sessionmaker(bind=engine)
+session = Session()
+
+

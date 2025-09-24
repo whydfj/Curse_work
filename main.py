@@ -22,10 +22,34 @@
 #— Отмечать прогресс выполнения (0-100%)
 #— Добавлять комментарии к задачам
 #— Прикреплять файлы (опционально)
+"""Давид, я сделал поддержку ORM нашей Бд, пример работы(файл data_base_work):
+all_users = session.query(User).all()
+for user in all_users:
+    if(user.role == "manager"):
+        print(f"{user.username} {user.password_hash} {user.created_at}")
+
+создал файл Password_hash.py, он как раз будет высчитывать хэш для нашего приложения (Хэширование с помощью BLAKE2b) почитай в инетике))
+пароль для админа - password
+пароль для user 123456
+Но они понятное дело хранятся как захэшированные
+
+далее я баловался с ии и сделал database.py(очень удобно, буду сам дополнять этот файл, чтобы можно было быстро, что-то использовать из бд)
+сейчас расскажу про методы в нем:
+
+get_all_users - получить всех юзеров
+get_user_by_username(username) - получить юзера по юзернейму
+get_tasks_by_user(user_id) - получить юзеров по таску(задаче)
+create_user(username, password_hash, role, name, surname) - создать юзера с такими полями(поле даты и времени обновляется при создании автоматически)
+create_task(employee_id, title, description, status="running", progress=0) - создать таск для определенного юзера
+"""
+
 from fastapi import FastAPI, HTTPException
 from authx import AuthX, AuthXConfig
 from pydantic import BaseModel, Field
 
+import DB_SQLite.data_base_work
+from DB_SQLite.data_base_work import session, User, Task, Comment, UserSettings
+from Password_hash import passwordHash
 
 #pydantic схемы
 class User_Schema(BaseModel):
