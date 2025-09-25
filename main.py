@@ -41,6 +41,7 @@ get_user_by_username(username) - получить юзера по юзерней
 get_tasks_by_user(user_id) - получить юзеров по таску(задаче)
 create_user(username, password_hash, role, name, surname) - создать юзера с такими полями(поле даты и времени обновляется при создании автоматически)
 create_task(employee_id, title, description, status="running", progress=0) - создать таск для определенного юзера
+get_login(username,password) (уже сам делал) - команда для авторизации пользователя(или админа).
 """
 
 from fastapi import FastAPI, HTTPException

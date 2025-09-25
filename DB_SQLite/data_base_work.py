@@ -1,5 +1,6 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Text, BLOB
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Text, BLOB, DateTime
 from sqlalchemy.orm import relationship, sessionmaker, declarative_base
+from datetime import datetime, timedelta
 
 #Подключение к бд
 engine = create_engine("sqlite+pysqlite:///../Coursework.db")
@@ -13,7 +14,7 @@ class User(Base):
     role = Column(String(10))
     name = Column(String(45))
     surname = Column(String(45))
-    created_at = Column(String)
+    created_at = Column(String, default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
     tasks = relationship("Task", back_populates="employee")
     comments = relationship("Comment", back_populates="user")
@@ -25,10 +26,10 @@ class Task(Base):
     employee_id = Column(Integer, ForeignKey('Users.id'))
     title = Column(String(100))
     description = Column(Text)
-    deadline = Column(String)
+    deadline = Column(DateTime, default=lambda: (datetime.now() + timedelta(days=30)).replace(microsecond=0))
     status = Column(String(10))
     progress = Column(Integer)
-    created_at = Column(String)
+    created_at = Column(String, default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
     employee = relationship("User", back_populates="tasks")
     comments = relationship("Comment", back_populates="task")
@@ -42,7 +43,7 @@ class Comment(Base):
     user_id = Column(Integer, ForeignKey('Users.id'))
     text = Column(Text)
     attached_file = Column(BLOB)
-    created_at = Column(String)
+    created_at = Column(String, default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
     task = relationship("Task", back_populates="comments")
     user = relationship("User", back_populates="comments")

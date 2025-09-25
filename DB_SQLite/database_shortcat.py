@@ -40,3 +40,10 @@ class DatabaseManager:
         session.add(new_task)
         session.commit()
         return new_task
+
+    @staticmethod
+    def get_login(username,password):
+        password = passwordHash.blake2b_hash(password)
+        return session.query(User).filter(User.username == username , User.password_hash == password).scalar()
+
+#DatabaseManager.create_user("admin1","123","employee","Ivan","Vasin");
