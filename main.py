@@ -55,9 +55,18 @@ from DB_SQLite.database_shortcat import DatabaseManager
 
 
 #pydantic схемы
-class User_Schema(BaseModel):
+class User_Login_Schema(BaseModel):
     username: str = Field(max_length=60)
     password: str = Field(max_length=20)
+
+
+class User_Create_Schema(BaseModel):
+    username: str = Field(max_length=60)
+    password: str = Field(max_length=20)
+    role: str = Field(max_length=10)
+    name: str = Field(max_length=15)
+    surname: str = Field(max_length=15)
+
 
 
 config = AuthXConfig()
@@ -75,7 +84,7 @@ methods = DatabaseManager()
 
 
 @app.post("/login")
-def login(user: User_Schema, response: Response):
+def login(user: User_Login_Schema, response: Response):
     # with new_session() as session:
     #     new_user = session.execute(select(Users).where(Users.username == user.username)).scalar_one_or_none()
     #     if new_user is None:
@@ -91,9 +100,14 @@ def login(user: User_Schema, response: Response):
     return {"message": "Пользователь найден", "sss": t_user, "token": token}
 
 
-@app.get("/createUser")
-def create_user():
-    return{"Администратор создает здесь пользователей"}
+@app.post("/createUser")
+def create_user(user: User_Create_Schema):
+    User = methods.get_user_by_username(user.username)
+    if User is None:
+        methods.create_user(user.username, user.password, user.role, user.name, user.surname)
+        return {"status": True, "message": "Пользователь создан успешно!"}
+    else:
+        raise HTTPException(status_code=404, detail="Пользователь с таким именем уже есть!")
 
 
 @app.get("/userSettings")
@@ -116,6 +130,6 @@ def main_page():
 
 
 print(DatabaseManager.get_login("admin", "password"))
-user = User_Schema(username="admin", password="12345")
+user = User_Login_Schema(username="admin", password="12345")
 with new_session() as session:
     print(session.execute(select(Users)).all())
