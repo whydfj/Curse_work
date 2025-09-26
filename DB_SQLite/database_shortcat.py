@@ -1,3 +1,5 @@
+from sqlalchemy import select
+
 from DB_SQLite.data_base_work import session, User, Task, Comment, UserSettings
 from Password_hash import passwordHash
 
@@ -9,7 +11,9 @@ class DatabaseManager:
 
     @staticmethod
     def get_user_by_username(username):
+        #res = select(User).where(User.username == username)
         return session.query(User).filter(User.username == username).first()
+
 
     @staticmethod
     def get_tasks_by_user(user_id):
@@ -42,8 +46,11 @@ class DatabaseManager:
         return new_task
 
     @staticmethod
-    def get_login(username,password):
+    def get_login(username, password):
         password = passwordHash.blake2b_hash(password)
-        return session.query(User).filter(User.username == username , User.password_hash == password).scalar()
+        return session.query(User).filter(User.username == username).scalar()
+
 
 #DatabaseManager.create_user("admin1","123","employee","Ivan","Vasin");
+
+print(DatabaseManager.get_login("admin", "password"))
