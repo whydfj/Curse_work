@@ -1,18 +1,18 @@
 from sqlalchemy import select
 
-from DB_SQLite.data_base_work import session, User, Task, Comment, UserSettings
+from DB_SQLite.data_base_work import session, Users, Task, Comment, UserSettings
 from Password_hash import passwordHash
 
 
 class DatabaseManager:
     @staticmethod
     def get_all_users():
-        return session.query(User).all()
+        return session.query(Users).all()
 
     @staticmethod
     def get_user_by_username(username):
         #res = select(User).where(User.username == username)
-        return session.query(User).filter(User.username == username).first()
+        return session.query(Users).filter(Users.username == username).first()
 
 
     @staticmethod
@@ -21,7 +21,7 @@ class DatabaseManager:
 
     @staticmethod
     def create_user(username, password_hash, role, name, surname):
-        new_user = User(
+        new_user = Users(
             username=username,
             password_hash=passwordHash.blake2b_hash(password_hash),
             role=role,
@@ -48,7 +48,7 @@ class DatabaseManager:
     @staticmethod
     def get_login(username, password):
         password = passwordHash.blake2b_hash(password)
-        return session.query(User).filter(User.username == username).scalar()
+        return session.query(Users).filter(Users.username == username, Users.password_hash == password).scalar()
 
 
 #DatabaseManager.create_user("admin1","123","employee","Ivan","Vasin");

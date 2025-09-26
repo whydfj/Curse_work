@@ -3,10 +3,14 @@ from sqlalchemy.orm import relationship, sessionmaker, declarative_base
 from datetime import datetime, timedelta
 
 #Подключение к бд
-engine = create_engine("sqlite+pysqlite:///../Coursework.db")
+engine = create_engine("sqlite:///Coursework.db")
+Session = sessionmaker(bind=engine)
+new_session = sessionmaker(bind=engine)
+
 Base = declarative_base()
 
-class User(Base):
+
+class Users(Base):
     __tablename__ = "Users"
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(60))
@@ -31,7 +35,7 @@ class Task(Base):
     progress = Column(Integer)
     created_at = Column(String, default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-    employee = relationship("User", back_populates="tasks")
+    employee = relationship("Users", back_populates="tasks")
     comments = relationship("Comment", back_populates="task")
 
 
@@ -46,7 +50,7 @@ class Comment(Base):
     created_at = Column(String, default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
     task = relationship("Task", back_populates="comments")
-    user = relationship("User", back_populates="comments")
+    user = relationship("Users", back_populates="comments")
 
 
 class UserSettings(Base):
@@ -57,9 +61,12 @@ class UserSettings(Base):
     language_app = Column(String(15))
     avatar = Column(BLOB)
 
-    user = relationship("User", back_populates="settings")
+    user = relationship("Users", back_populates="settings")
 
-Session = sessionmaker(bind=engine)
+
+Base.metadata.create_all(bind=engine)
+
+
 session = Session()
 
 

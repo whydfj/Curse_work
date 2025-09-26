@@ -44,13 +44,15 @@ create_task(employee_id, title, description, status="running", progress=0) - с�
 get_login(username,password) (уже сам делал) - команда для авторизации пользователя(или админа).
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from authx import AuthX, AuthXConfig
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 
-import DB_SQLite.data_base_work
-from DB_SQLite.data_base_work import session, User, Task, Comment, UserSettings
-from Password_hash import passwordHash
+from DB_SQLite.data_base_work import new_session, Users
+
+from DB_SQLite.database_shortcat import DatabaseManager
+
 
 #pydantic схемы
 class User_Schema(BaseModel):
@@ -69,25 +71,40 @@ security = AuthX(config=config)
 
 app = FastAPI()
 
+methods = DatabaseManager()
 
 
-@app.post("/login/")
-def login_by_admin():
-    return {"ЛОГИН ДЛЯ ВСЕХ"}
+@app.post("/login")
+def login(user: User_Schema, response: Response):
+    # with new_session() as session:
+    #     new_user = session.execute(select(Users).where(Users.username == user.username)).scalar_one_or_none()
+    #     if new_user is None:
+    #         raise HTTPException(status_code=409, detail="User is not found")
+    #     return {"message": "Пользователь найден", "sss": new_user}
+
+    t_user = DatabaseManager.get_login("admin", "password")
+    if t_user is None:
+        raise HTTPException(status_code=409, detail="User is not found")
+
+    token = security.create_access_token(uid=str(t_user.id))
+    response.set_cookie(config.JWT_ACCESS_COOKIE_NAME, token)
+    return {"message": "Пользователь найден", "sss": t_user, "token": token}
 
 
-@app.get("/createUser/")
+@app.get("/createUser")
 def create_user():
     return{"Администратор создает здесь пользователей"}
 
 
-@app.get("/userSettings/")
+@app.get("/userSettings")
 def login_by_admin():
     return {"ЛОГИН ДЛЯ ВСЕХ"}
 
-@app.get("/mainWindowUser/")
+
+@app.get("/mainWindowUser")
 def main_window_user():
     return {"Всякие таски, хуяски"}
+
 
 @app.get("/")
 def main_page():
@@ -97,3 +114,8 @@ def main_page():
 
     raise HTTPException(status_code=404, detail="не найдено(")
 
+
+print(DatabaseManager.get_login("admin", "password"))
+user = User_Schema(username="admin", password="12345")
+with new_session() as session:
+    print(session.execute(select(Users)).all())
