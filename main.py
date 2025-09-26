@@ -51,7 +51,7 @@ from sqlalchemy import select
 
 from DB_SQLite.data_base_work import new_session, Users
 
-from DB_SQLite.database_shortcat import DatabaseManager
+from DB_SQLite.database_shortcat import DatabaseManager as methods
 
 
 #pydantic схемы
@@ -80,7 +80,6 @@ security = AuthX(config=config)
 
 app = FastAPI()
 
-methods = DatabaseManager()
 
 
 @app.post("/login")
@@ -90,8 +89,7 @@ def login(user: User_Login_Schema, response: Response):
     #     if new_user is None:
     #         raise HTTPException(status_code=409, detail="User is not found")
     #     return {"message": "Пользователь найден", "sss": new_user}
-
-    t_user = DatabaseManager.get_login("admin", "password")
+    t_user = methods.get_login("admin", "password")
     if t_user is None:
         raise HTTPException(status_code=409, detail="User is not found")
 
@@ -111,7 +109,7 @@ def create_user(user: User_Create_Schema):
 
 
 @app.get("/userSettings")
-def login_by_admin():
+def UserSettings():
     return {"ЛОГИН ДЛЯ ВСЕХ"}
 
 
@@ -129,7 +127,7 @@ def main_page():
     raise HTTPException(status_code=404, detail="не найдено(")
 
 
-print(DatabaseManager.get_login("admin", "password"))
-user = User_Login_Schema(username="admin", password="12345")
+print(methods.get_login("admin1", "123456"))
+user = User_Login_Schema(username="admin", password="password")
 with new_session() as session:
     print(session.execute(select(Users)).all())

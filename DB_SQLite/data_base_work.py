@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Text,
 from sqlalchemy.orm import relationship, sessionmaker, declarative_base
 from datetime import datetime, timedelta
 
+
 #Подключение к бд
 engine = create_engine("sqlite:///Coursework.db")
 Session = sessionmaker(bind=engine)
@@ -68,5 +69,4 @@ Base.metadata.create_all(bind=engine)
 
 
 session = Session()
-
 
