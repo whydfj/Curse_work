@@ -67,7 +67,8 @@ class User_Create_Schema(BaseModel):
     name: str = Field(max_length=15)
     surname: str = Field(max_length=15)
 
-
+class User_Found_Schema(BaseModel):
+    username: str = Field(max_length=60)
 
 config = AuthXConfig()
 
@@ -89,7 +90,7 @@ def login(user: User_Login_Schema, response: Response):
     #     if new_user is None:
     #         raise HTTPException(status_code=409, detail="User is not found")
     #     return {"message": "Пользователь найден", "sss": new_user}
-    t_user = methods.get_login("admin", "password")
+    t_user = methods.get_login(user.username, user.password)
     if t_user is None:
         raise HTTPException(status_code=409, detail="User is not found")
 
@@ -102,10 +103,22 @@ def login(user: User_Login_Schema, response: Response):
 def create_user(user: User_Create_Schema):
     User = methods.get_user_by_username(user.username)
     if User is None:
+        if len(user.password) < 4 :
+            raise HTTPException(status_code=404, detail="Длина пароля должна быть хотя бы 4")
         methods.create_user(user.username, user.password, user.role, user.name, user.surname)
         return {"status": True, "message": "Пользователь создан успешно!"}
     else:
         raise HTTPException(status_code=404, detail="Пользователь с таким именем уже есть!")
+
+
+@app.post("/found")
+def found_user(user: User_Found_Schema):
+    User = methods.get_user_by_username(user.username)
+    if User is None:
+        methods.get_user_by_username(user.username)
+        return {"status": True, "message": "Пользователь найден"}
+    else:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
 
 
 @app.get("/userSettings")
@@ -127,7 +140,5 @@ def main_page():
     raise HTTPException(status_code=404, detail="не найдено(")
 
 
-print(methods.get_login("admin1", "123456"))
-user = User_Login_Schema(username="admin", password="password")
 with new_session() as session:
     print(session.execute(select(Users)).all())

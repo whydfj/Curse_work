@@ -11,7 +11,6 @@ class DatabaseManager:
 
     @staticmethod
     def get_user_by_username(username):
-        #res = select(User).where(User.username == username)
         return session.query(Users).filter(Users.username == username).first()
 
 
@@ -50,7 +49,5 @@ class DatabaseManager:
         password = passwordHash.blake2b_hash(password)
         return session.query(Users).filter(Users.username == username, Users.password_hash == password).scalar()
 
-
-#DatabaseManager.create_user("admin1","123","employee","Ivan","Vasin");
-
-print(DatabaseManager.get_login("admin", "password"))
+#   @staticmethod
+#   def delete(username):
