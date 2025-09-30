@@ -49,5 +49,16 @@ class DatabaseManager:
         password = passwordHash.blake2b_hash(password)
         return session.query(Users).filter(Users.username == username, Users.password_hash == password).scalar()
 
-#   @staticmethod
-#   def delete(username):
+    @staticmethod
+    def delete_user(username):
+        user_to_delete = session.query(Users).filter(Users.username == username).first()
+        if user_to_delete is None:
+            return None
+        session.delete(user_to_delete)
+        session.commit()
+        return True
+
+    @staticmethod
+    def number_of_all_users():
+        all_user_count = session.query(Users).all().count()
+        return all_user_count

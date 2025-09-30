@@ -67,7 +67,7 @@ class User_Create_Schema(BaseModel):
     name: str = Field(max_length=15)
     surname: str = Field(max_length=15)
 
-class User_Found_Schema(BaseModel):
+class User_Found_and_Delete_Schema(BaseModel):
     username: str = Field(max_length=60)
 
 config = AuthXConfig()
@@ -108,18 +108,33 @@ def create_user(user: User_Create_Schema):
         methods.create_user(user.username, user.password, user.role, user.name, user.surname)
         return {"status": True, "message": "Пользователь создан успешно!"}
     else:
-        raise HTTPException(status_code=404, detail="Пользователь с таким именем уже есть!")
+        raise HTTPException(status_code=405, detail="Пользователь с таким именем уже есть!")
 
 
 @app.post("/found")
-def found_user(user: User_Found_Schema):
+def found_user(user: User_Found_and_Delete_Schema):
     User = methods.get_user_by_username(user.username)
-    if User is None:
+    if User is not None:
         methods.get_user_by_username(user.username)
-        return {"status": True, "message": "Пользователь найден"}
+        return {"status": True, "message": "Пользователь найден" , "name_user": User.name,"surname_user": User.surname,"role_user":User.role,"created_at": User.created_at}
     else:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
+@app.delete("/found/delete")
+def delete_user(user: User_Found_and_Delete_Schema):
+    User = methods.get_user_by_username(user.username)
+    if User is not None:
+        methods.delete_user(user.username)
+        return {"status": True, "message": "Пользователь удален"}
+    else:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+
+#@app.post("/found/show_all")
+#def show_all():
+#    if methods.number_of_all_users() > 0:
+#        return session.query().all();
+#    return {"status" : True, "message": "Пользователи не найдены"}
 
 @app.get("/userSettings")
 def UserSettings():
@@ -140,5 +155,8 @@ def main_page():
     raise HTTPException(status_code=404, detail="не найдено(")
 
 
+
 with new_session() as session:
     print(session.execute(select(Users)).all())
+
+
