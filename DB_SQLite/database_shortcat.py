@@ -60,5 +60,5 @@ class DatabaseManager:
 
     @staticmethod
     def number_of_all_users():
-        all_user_count = session.query(Users).all().count()
+        all_user_count = session.query(Users).count()
         return all_user_count

@@ -131,11 +131,11 @@ def delete_user(user: User_Found_and_Delete_Schema):
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
 
-#@app.post("/found/show_all")
-#def show_all():
-#    if methods.number_of_all_users() > 0:
-#        return session.query().all();
-#    return {"status" : True, "message": "Пользователи не найдены"}
+@app.post("/found/show_all")
+def show_all():
+    if methods.number_of_all_users() > 0:
+        return methods.get_all_users()
+    return {"status" : True, "message": "Пользователи не найдены"}
 
 @app.get("/userSettings")
 def UserSettings():
