@@ -43,11 +43,12 @@ create_user(username, password_hash, role, name, surname) - создать юз�
 create_task(employee_id, title, description, status="running", progress=0) - создать таск для определенного юзера
 get_login(username,password) (уже сам делал) - команда для авторизации пользователя(или админа).
 """
-
+import uvicorn
 from fastapi import FastAPI, HTTPException, Response
 from authx import AuthX, AuthXConfig
 from pydantic import BaseModel, Field
 from sqlalchemy import select
+from starlette.responses import RedirectResponse
 
 from DB_SQLite.data_base_work import new_session, Users
 
@@ -148,15 +149,17 @@ def main_window_user():
 
 @app.get("/")
 def main_page():
-    p = 0
-    if p == 2:
-        return {"qq": 1}
+    return RedirectResponse(url="/login")
+    #p = 0
+    #if p == 2:
+    #    return {"qq": 1}
+#
+    #raise HTTPException(status_code=404, detail="не найдено(")
 
-    raise HTTPException(status_code=404, detail="не найдено(")
+if __name__ == '__main__':
+    uvicorn.run("main:app", reload=True)
 
-
-
-with new_session() as session:
-    print(session.execute(select(Users)).all())
+#with new_session() as session:
+#    print(session.execute(select(Users)).all())
 
 
