@@ -1,6 +1,7 @@
 import hashlib
 
-class passwordHash():
+
+class passwordHash:
     def __init__(self, password):
         self.password = password
 

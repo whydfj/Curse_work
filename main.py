@@ -44,8 +44,9 @@ create_task(employee_id, title, description, status="running", progress=0) - с�
 get_login(username,password) (уже сам делал) - команда для авторизации пользователя(или админа).
 """
 import uvicorn
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Response, Depends
 from authx import AuthX, AuthXConfig
+from fastapi.params import Depends
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from starlette.responses import RedirectResponse
@@ -53,6 +54,7 @@ from starlette.responses import RedirectResponse
 from DB_SQLite.data_base_work import new_session, Users
 
 from DB_SQLite.database_shortcat import DatabaseManager as methods
+
 
 
 #pydantic схемы
@@ -68,20 +70,34 @@ class User_Create_Schema(BaseModel):
     name: str = Field(max_length=15)
     surname: str = Field(max_length=15)
 
+
 class User_Found_and_Delete_Schema(BaseModel):
     username: str = Field(max_length=60)
+
 
 config = AuthXConfig()
 
 config.JWT_ACCESS_COOKIE_NAME = "aboba"
 config.JWT_SECRET_KEY = "test-secret-key"
 config.JWT_TOKEN_LOCATION = ["cookies"]
+config.JWT_COOKIE_CSRF_PROTECT = False  # 👈 отключаем CSRF проверку
 
 security = AuthX(config=config)
 
 
 app = FastAPI()
 
+
+def is_manager(current_user: dict = Depends(security.access_token_required)):
+    """
+    Получение информации о текущем пользователе
+    """
+    user_id = int(dict(current_user)["sub"])
+
+    with new_session() as session:
+        users_role = session.execute(select(Users.role).where(Users.id == user_id))
+
+    return users_role.scalar() == "manager"
 
 
 @app.post("/login")
@@ -100,11 +116,23 @@ def login(user: User_Login_Schema, response: Response):
     return {"message": "Пользователь найден", "sss": t_user, "token": token}
 
 
+@app.post("/logout")
+def logout(response: Response):
+    response.delete_cookie(config.JWT_ACCESS_COOKIE_NAME, secure=False, httponly=True, samesite="lax")
+    return {"message": "Вы успешно вышли из системы", "status": True}
+
+
 @app.post("/createUser")
-def create_user(user: User_Create_Schema):
+def create_user(user: User_Create_Schema, current_user: dict = Depends(security.access_token_required)):
+    user_id = int(dict(current_user)["sub"])
+    with new_session() as session:
+        users_role = session.execute(select(Users.role).where(Users.id == user_id))
+    users_role = users_role.scalar()
     User = methods.get_user_by_username(user.username)
+    if users_role != "manager":
+        raise HTTPException(status_code=401, detail="Извините, пользователей может создавать только менеджер!")
     if User is None:
-        if len(user.password) < 4 :
+        if len(user.password) < 4:
             raise HTTPException(status_code=404, detail="Длина пароля должна быть хотя бы 4")
         methods.create_user(user.username, user.password, user.role, user.name, user.surname)
         return {"status": True, "message": "Пользователь создан успешно!"}
@@ -121,6 +149,7 @@ def found_user(user: User_Found_and_Delete_Schema):
     else:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
+
 @app.delete("/found/delete")
 def delete_user(user: User_Found_and_Delete_Schema):
     User = methods.get_user_by_username(user.username)
@@ -136,6 +165,7 @@ def show_all():
     if methods.number_of_all_users() > 0:
         return methods.get_all_users()
     return {"status" : True, "message": "Пользователи не найдены"}
+
 
 @app.get("/userSettings")
 def UserSettings():
@@ -156,8 +186,10 @@ def main_page():
 #
     #raise HTTPException(status_code=404, detail="не найдено(")
 
+
 if __name__ == '__main__':
     uvicorn.run("main:app", reload=True)
+
 
 #with new_session() as session:
 #    print(session.execute(select(Users)).all())

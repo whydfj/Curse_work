@@ -1,6 +1,7 @@
+from fastapi import Depends
 from sqlalchemy import select
 
-from DB_SQLite.data_base_work import session, Users, Task, Comment, UserSettings
+from DB_SQLite.data_base_work import session, Users, Task, Comment, UserSettings, new_session
 from Password_hash import passwordHash
 
 
@@ -62,3 +63,5 @@ class DatabaseManager:
     def number_of_all_users():
         all_user_count = session.query(Users).count()
         return all_user_count
+
+
