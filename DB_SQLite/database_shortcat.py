@@ -1,7 +1,7 @@
 from fastapi import Depends
 from sqlalchemy import select
 
-from DB_SQLite.data_base_work import session, Users, Task, Comment, UserSettings, new_session
+from DB_SQLite.data_base_work import session, Users, Tasks, Comment, UserSettings, new_session
 from Password_hash import passwordHash
 
 
@@ -20,7 +20,7 @@ class DatabaseManager:
 
     @staticmethod
     def get_tasks_by_user(user_id):
-        return session.query(Task).filter(Task.employee_id == user_id).all()
+        return session.query(Tasks).filter(Tasks.employee_id == user_id).all()
 
     @staticmethod
     def create_user(username, password_hash, role, name, surname):
@@ -37,7 +37,7 @@ class DatabaseManager:
 
     @staticmethod
     def create_task(employee_id, title, description, status="running", progress=0):
-        new_task = Task(
+        new_task = Tasks(
             employee_id=employee_id,
             title=title,
             description=description,

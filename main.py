@@ -53,7 +53,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from starlette.responses import RedirectResponse
 
-from DB_SQLite.data_base_work import new_session, Users
+from DB_SQLite.data_base_work import new_session, Users, Tasks
 from DB_SQLite.database_shortcat import DatabaseManager as methods
 
 
@@ -69,6 +69,12 @@ class User_Create_Schema(BaseModel):
     role: str = Field(max_length=10)
     name: str = Field(max_length=15)
     surname: str = Field(max_length=15)
+
+
+class Task_Schema(BaseModel):
+    username: str
+    title: str
+    description: str
 
 
 class User_Found_and_Delete_Schema(BaseModel):
@@ -159,6 +165,12 @@ def delete_user(user: User_Found_and_Delete_Schema):
         return {"status": True, "message": "Пользователь удален"}
     else:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+
+@app.post("/add_task")
+async def add_task(task: Task_Schema):  # Предполагая, что Task - это Pydantic модель
+    new_task = methods.create_task(methods.get_user_id_by_username(task.username), task.title, task.description)
+    return {"message": "Task added", "task": new_task}
 
 
 @app.post("/found/show_all")
