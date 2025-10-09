@@ -14,6 +14,9 @@ class DatabaseManager:
     def get_user_by_username(username):
         return session.query(Users).filter(Users.username == username).first()
 
+    @staticmethod
+    def get_user_id_by_username(username):
+        return session.query(Users).filter(Users.username == username).first().id
 
     @staticmethod
     def get_tasks_by_user(user_id):
