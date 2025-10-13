@@ -184,7 +184,7 @@ async def add_task(task: Task_Schema):  # Предполагая, что Task - 
 def set_task(new_task: Task_Set_Schema):
     with (new_session() as session):
         t = session.execute(select(Tasks)
-                            .where(Tasks.id == methods.get_user_id_by_username(new_task.username)
+                            .where(Tasks.employee_id == methods.get_user_id_by_username(new_task.username)
                                    and Tasks.title == new_task.title)
                             )
 
@@ -192,9 +192,11 @@ def set_task(new_task: Task_Set_Schema):
         if t is None:
             raise HTTPException(status_code=404, detail="Задача не найдена, проверьте никнейм или задачу")
 
-        session.execute(update(Tasks).where(Tasks.id == methods.get_user_id_by_username(new_task.username)
+        session.execute(update(Tasks).where(Tasks.employee_id == methods.get_user_id_by_username(new_task.username)
                                             and Tasks.title == new_task.title)
                         .values(title=new_task.new_title, description=new_task.new_description))
+        session.commit()
+        return {"message": "Задача успешно изменена!", "status": True}
 
 
 @app.post("/found/show_all")
