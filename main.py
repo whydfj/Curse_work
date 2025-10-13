@@ -50,7 +50,7 @@ from authx import AuthX, AuthXConfig
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.params import Depends
 from pydantic import BaseModel, Field
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 from starlette.responses import RedirectResponse
 
 from DB_SQLite.data_base_work import new_session, Users, Tasks
@@ -75,6 +75,11 @@ class Task_Schema(BaseModel):
     username: str
     title: str
     description: str
+
+
+class Task_Delete_Schema(BaseModel):
+    username: str
+    title: str
 
 
 class Task_Set_Schema(BaseModel):
@@ -176,8 +181,17 @@ def delete_user(user: User_Found_and_Delete_Schema):
 
 @app.post("/add_task")
 async def add_task(task: Task_Schema):  # Предполагая, что Task - это Pydantic модель
-    new_task = methods.create_task(methods.get_user_id_by_username(task.username), task.title, task.description)
-    return {"message": "Task added", "task": new_task}
+    with new_session() as session:
+        t = session.execute(select(Tasks)
+                            .where(Tasks.employee_id == methods.get_user_id_by_username(task.username)
+                                   and Tasks.title == task.title)
+                            )
+
+        t = t.scalar_one_or_none()
+        if t is None:
+            new_task = methods.create_task(methods.get_user_id_by_username(task.username), task.title, task.description)
+            return {"message": "Task added", "task": new_task}
+        raise HTTPException(status_code=401, detail="Задача уже существует!")
 
 
 @app.patch("/set_task")
@@ -197,6 +211,27 @@ def set_task(new_task: Task_Set_Schema):
                         .values(title=new_task.new_title, description=new_task.new_description))
         session.commit()
         return {"message": "Задача успешно изменена!", "status": True}
+
+
+@app.delete("/delete_task")
+def delete_task(task: Task_Delete_Schema):
+    with (new_session() as session):
+        t = session.execute(select(Tasks)
+                            .where(Tasks.employee_id == methods.get_user_id_by_username(task.username)
+                                   and Tasks.title == task.title)
+                            )
+
+        t = t.scalar_one_or_none()
+        if t is None:
+            raise HTTPException(status_code=404, detail="Задача не найдена, проверьте никнейм или задачу")
+
+        session.execute(delete(Tasks)
+                        .where(Tasks.employee_id == methods.get_user_id_by_username(task.username)
+                               and Tasks.title == task.title)
+                        )
+        # Тест с g
+        session.commit()
+        return {"message": "Задача успешно удалена!", "status": True}
 
 
 @app.post("/found/show_all")
