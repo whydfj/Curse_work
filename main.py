@@ -45,6 +45,9 @@ create_user(username, password_hash, role, name, surname) - создать юз�
 create_task(employee_id, title, description, status="running", progress=0) - создать таск для определенного юзера
 get_login(username,password) (уже сам делал) - команда для авторизации пользователя(или админа).
 """
+from datetime import datetime
+from typing import Optional
+
 import uvicorn
 from authx import AuthX, AuthXConfig
 from fastapi import FastAPI, HTTPException, Response
@@ -75,6 +78,7 @@ class Task_Schema(BaseModel):
     username: str
     title: str
     description: str
+    deadline: Optional[datetime] = None
 
 
 class Task_Delete_Schema(BaseModel):
@@ -243,12 +247,39 @@ def delete_task(task: Task_Delete_Schema):
         return {"message": "Задача успешно удалена!", "status": True}
 
 
-@app.get("/get_user_tasks/{username}")
+@app.get("/get_user_tasks/{username}", tags=["Task Management"])
 def get_user_tasks(username: str):
     user_tasks = methods.get_all_users_tasks(username)
     if user_tasks is None:
         raise HTTPException(status_code=404, detail="У пользователя нет действующих задач")
     return user_tasks
+
+
+class Progress_Update_Schema(BaseModel):
+    task_title: str
+    progress: int = Field(ge=0, le=100)
+
+
+@app.patch("/tasks/{task_id}/progress", tags=["Task Management"])
+def update_progress(progress_data: Progress_Update_Schema, current_user: dict = Depends(security.access_token_required)):
+    """Обновить прогресс выполнения задачи"""
+    user_id = int(dict(current_user)["sub"])
+    with new_session() as session:
+        task = session.execute(select(Tasks).where(
+            Tasks.title == progress_data.task_title,
+            Tasks.employee_id == user_id
+        )).scalar_one_or_none()
+
+        if not task:
+            raise HTTPException(status_code=404, detail="Задача не найдена")
+
+        session.execute(
+            update(Tasks)
+            .where(Tasks.title == progress_data.task_title)
+            .values(progress=progress_data.progress)
+        )
+        session.commit()
+        return {"message": "Прогресс обновлен", "progress": progress_data.progress}
 
 
 @app.post("/found/show_all", tags=["User Management"])

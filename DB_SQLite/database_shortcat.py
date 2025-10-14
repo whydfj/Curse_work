@@ -55,6 +55,21 @@ class DatabaseManager:
         session.commit()
         return new_task
 
+
+    @staticmethod
+    def create_task_with_deadline(employee_id, title, description, deadline, status="running", progress=0):
+        new_task = Tasks(
+            employee_id=employee_id,
+            title=title,
+            description=description,
+            status=status,
+            progress=progress,
+            deadline=deadline
+        )
+        session.add(new_task)
+        session.commit()
+        return new_task
+
     @staticmethod
     def get_login(username, password):
         password = passwordHash.blake2b_hash(password)
