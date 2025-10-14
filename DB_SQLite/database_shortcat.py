@@ -19,6 +19,13 @@ class DatabaseManager:
         return session.query(Users).filter(Users.username == username).first().id
 
     @staticmethod
+    def get_user_id_by_username2(username):
+        with new_session() as s:
+            return s.execute(
+                select(Users.id).where(Users.username == username) # type: ignore
+            ).scalar()
+
+    @staticmethod
     def get_tasks_by_user(user_id):
         return session.query(Tasks).filter(Tasks.employee_id == user_id).all()
 
@@ -67,4 +74,14 @@ class DatabaseManager:
         all_user_count = session.query(Users).count()
         return all_user_count
 
+    @staticmethod
+    def get_all_users_tasks(username: str):
+        with new_session() as t_session:
+            user_id = DatabaseManager().get_user_id_by_username(username)
+
+            users_tasks = t_session.execute(
+                select(Tasks).where(Tasks.employee_id == user_id)
+            )
+
+            return users_tasks.scalars().all()
 

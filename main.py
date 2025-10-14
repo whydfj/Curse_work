@@ -180,18 +180,27 @@ def delete_user(user: User_Found_and_Delete_Schema):
 
 
 @app.post("/add_task", tags=["Task Management"])
-async def add_task(task: Task_Schema):  # Предполагая, что Task - это Pydantic модель
+async def add_task(task: Task_Schema):
     with new_session() as session:
-        t = session.execute(select(Tasks)
-                            .where(Tasks.employee_id == methods.get_user_id_by_username(task.username)
-                                   and Tasks.title == task.title)
-                            )
+        # Получаем ID пользователя
+        user_id = methods.get_user_id_by_username2(task.username)
+        if not user_id:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
 
-        t = t.scalar_one_or_none()
-        if t is None:
-            new_task = methods.create_task(methods.get_user_id_by_username(task.username), task.title, task.description)
+        # Проверяем, существует ли уже задача с таким названием у этого пользователя
+        existing_task = session.execute(
+            select(Tasks).where(
+                Tasks.title == task.title,
+                Tasks.employee_id == user_id # type: ignore
+            )
+        ).scalar_one_or_none()
+
+        if existing_task is None:
+            new_task = methods.create_task(user_id, task.title, task.description)
+            session.commit()
             return {"message": "Task added", "task": new_task}
-        raise HTTPException(status_code=401, detail="Задача уже существует!")
+
+        raise HTTPException(status_code=400, detail="Задача уже существует!")
 
 
 @app.patch("/set_task", tags=["Task Management"])
@@ -232,6 +241,14 @@ def delete_task(task: Task_Delete_Schema):
         # Тест с g
         session.commit()
         return {"message": "Задача успешно удалена!", "status": True}
+
+
+@app.get("/get_user_tasks/{username}")
+def get_user_tasks(username: str):
+    user_tasks = methods.get_all_users_tasks(username)
+    if user_tasks is None:
+        raise HTTPException(status_code=404, detail="У пользователя нет действующих задач")
+    return user_tasks
 
 
 @app.post("/found/show_all", tags=["User Management"])
