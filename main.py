@@ -226,17 +226,17 @@ def set_task(new_task: Task_Set_Schema):
 def delete_task(task: Task_Delete_Schema):
     with (new_session() as session):
         t = session.execute(select(Tasks)
-                            .where(Tasks.employee_id == methods.get_user_id_by_username(task.username)
-                                   and Tasks.title == task.title)
+                            .where(Tasks.employee_id == methods.get_user_id_by_username(task.username) # type: ignore
+                                   , Tasks.title == task.title)
                             )
 
-        t = t.scalar_one_or_none()
+        t = t.scalars().all()
         if t is None:
             raise HTTPException(status_code=404, detail="Задача не найдена, проверьте никнейм или задачу")
 
         session.execute(delete(Tasks)
-                        .where(Tasks.employee_id == methods.get_user_id_by_username(task.username)
-                               and Tasks.title == task.title)
+                        .where(Tasks.employee_id == methods.get_user_id_by_username(task.username) # type: ignore
+                               , Tasks.title == task.title)
                         )
         # Тест с g
         session.commit()
