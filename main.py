@@ -183,6 +183,15 @@ def delete_user(user: User_Found_and_Delete_Schema):
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
 
+@app.get("/get_current_user", tags=["User Management"])
+def current_user(current_user: dict = Depends(security.access_token_required)):
+    users_id = int(dict(current_user)["sub"])
+    user = methods.get_user_by_id(users_id)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Войдите для того чтобы увидеть свой профиль")
+    return user
+
+
 @app.post("/add_task", tags=["Task Management"])
 async def add_task(task: Task_Schema):
     with new_session() as session:

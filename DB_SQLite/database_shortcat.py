@@ -14,6 +14,19 @@ class DatabaseManager:
     def get_user_by_username(username):
         return session.query(Users).filter(Users.username == username).first()
 
+
+    @staticmethod
+    def get_user_by_id(id: int):
+        with new_session() as s:
+            user = s.execute(
+                select(Users)
+                .where(Users.id == id)
+            ).scalar_one_or_none()
+            if user is None:
+                return None
+            return user
+
+
     @staticmethod
     def get_user_id_by_username(username):
         return session.query(Users).filter(Users.username == username).first().id
