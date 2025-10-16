@@ -97,6 +97,11 @@ class User_Found_and_Delete_Schema(BaseModel):
     username: str = Field(max_length=60)
 
 
+class Deadline_Set_Schema(BaseModel):
+    task_id: int
+    new_deadline: datetime
+
+
 config = AuthXConfig()
 
 config.JWT_ACCESS_COOKIE_NAME = "aboba"
@@ -322,6 +327,22 @@ def add_new_comment(new_comment: Comment_Schema, current_user: dict = Depends(se
     if new_comment is None:
         raise HTTPException(status_code=403, detail="Вам не доступна данная функция")
 
+
+@app.patch("/update_deadline")
+def update_deadline(deadline: Deadline_Set_Schema, current_user: dict = Depends(security.access_token_required)):
+    user_id = int(dict(current_user)["sub"])
+    role = is_manager(user_id)
+    if role != "manager":
+        raise HTTPException(status_code=403, detail="Извините, у вас нет доступа к данной функции")
+    with new_session() as session:
+        task = session.execute(
+            update(Tasks)
+            .where(Tasks.id == deadline.task_id)
+            .values(deadline=deadline.new_deadline)
+        )
+        session.commit()
+
+        return {"status": True, "message": "Дедлайн успешно обновлен"}
 
 
 @app.post("/found/show_all", tags=["User Management"])

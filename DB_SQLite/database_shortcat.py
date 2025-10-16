@@ -148,7 +148,7 @@ class DatabaseManager:
             if user_id is None:
                 return None
             if task is None:
-                return
+                return None
 
             if user.role != "manager":
                 if task.employee_id != user_id:
