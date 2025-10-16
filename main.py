@@ -53,7 +53,7 @@ from authx import AuthX, AuthXConfig
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.params import Depends
 from pydantic import BaseModel, Field
-from sqlalchemy import select, update, delete, or_
+from sqlalchemy import select, update, delete, or_, BLOB
 from starlette.responses import RedirectResponse
 
 from DB_SQLite.data_base_work import new_session, Users, Tasks
@@ -302,6 +302,26 @@ def update_progress(progress_data: Progress_Update_Schema, current_user: dict = 
         )
         session.commit()
         return {"message": "Прогресс обновлен", "progress": progress_data.progress}
+
+
+class Comment_Schema(BaseModel):
+    task_id: int
+    text: str
+    attached_file: None
+
+
+@app.post("/add_new_comment")
+def add_new_comment(new_comment: Comment_Schema, current_user: dict = Depends(security.access_token_required)):
+    user_id = int(dict(current_user)["sub"])
+    new_comment = methods.add_comment(
+        task_id=new_comment.task_id,
+        user_id=user_id,
+        attached_file=new_comment.attached_file,
+        text=new_comment.text
+    )
+    if new_comment is None:
+        raise HTTPException(status_code=403, detail="Вам не доступна данная функция")
+
 
 
 @app.post("/found/show_all", tags=["User Management"])

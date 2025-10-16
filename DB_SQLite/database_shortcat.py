@@ -114,20 +114,20 @@ class DatabaseManager:
             return users_tasks.scalars().all()
 
     @staticmethod
-    def add_comment(task_id: int,user_id: int,text: str, attached_file = None):
+    def add_comment(task_id: int, user_id: int, text: str, attached_file=None):
 
         user = session.query(Users).filter(Users.id == user_id).first()
         if user is None:
             return None
 
-        task = session.query(Task).filter(Task.id == task_id).first()
+        task = session.query(Tasks).filter(Tasks.id == task_id).first()
         if task is None:
             return None
 
         if user.role != "manager":
             if task.employee_id != user_id:
                 return None
-        new_comment= Comment(
+        new_comment = Comment(
             task_id=task_id,
             text=text,
             user_id=user_id,
