@@ -45,15 +45,18 @@ create_user(username, password_hash, role, name, surname) - создать юз�
 create_task(employee_id, title, description, status="running", progress=0) - создать таск для определенного юзера
 get_login(username,password) (уже сам делал) - команда для авторизации пользователя(или админа).
 """
+from datetime import datetime
+from typing import Optional
+
 import uvicorn
 from authx import AuthX, AuthXConfig
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.params import Depends
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import select, update, delete, or_
 from starlette.responses import RedirectResponse
 
-from DB_SQLite.data_base_work import new_session, Users
+from DB_SQLite.data_base_work import new_session, Users, Tasks
 from DB_SQLite.database_shortcat import DatabaseManager as methods
 
 
@@ -69,6 +72,25 @@ class User_Create_Schema(BaseModel):
     role: str = Field(max_length=10)
     name: str = Field(max_length=15)
     surname: str = Field(max_length=15)
+
+
+class Task_Schema(BaseModel):
+    username: str
+    title: str
+    description: str
+    deadline: datetime | None
+
+
+class Task_Delete_Schema(BaseModel):
+    username: str
+    title: str
+
+
+class Task_Set_Schema(BaseModel):
+    username: str
+    title: str
+    new_title: str
+    new_description: str
 
 
 class User_Found_and_Delete_Schema(BaseModel):
@@ -87,19 +109,18 @@ security = AuthX(config=config)
 app = FastAPI()
 
 
-def is_manager(current_user: dict = Depends(security.access_token_required)):
+def is_manager(user_id):
     """
     Получение информации о текущем пользователе
     """
-    user_id = int(dict(current_user)["sub"])
 
     with new_session() as session:
         users_role = session.execute(select(Users.role).where(Users.id == user_id))
 
-    return users_role.scalar() == "manager"
+    return users_role.scalar()
 
 
-@app.post("/login")
+@app.post("/login", tags=["Authentication"])
 def login(user: User_Login_Schema, response: Response):
     # with new_session() as session:
     #     new_user = session.execute(select(Users).where(Users.username == user.username)).scalar_one_or_none()
@@ -115,13 +136,13 @@ def login(user: User_Login_Schema, response: Response):
     return {"message": "Пользователь найден", "sss": t_user, "token": token}
 
 
-@app.post("/logout")
+@app.post("/logout", tags=["Authentication"])
 def logout(response: Response):
     response.delete_cookie(config.JWT_ACCESS_COOKIE_NAME, secure=False, httponly=True, samesite="lax")
     return {"message": "Вы успешно вышли из системы", "status": True}
 
 
-@app.post("/createUser")
+@app.post("/create_user", tags=["User Management"])
 def create_user(user: User_Create_Schema, current_user: dict = Depends(security.access_token_required)):
     user_id = int(dict(current_user)["sub"])
     with new_session() as session:
@@ -139,7 +160,7 @@ def create_user(user: User_Create_Schema, current_user: dict = Depends(security.
         raise HTTPException(status_code=405, detail="Пользователь с таким именем уже есть!")
 
 
-@app.post("/found")
+@app.post("/found", tags=["User Management"])
 def found_user(user: User_Found_and_Delete_Schema):
     User = methods.get_user_by_username(user.username)
     if User is not None:
@@ -151,7 +172,7 @@ def found_user(user: User_Found_and_Delete_Schema):
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
 
-@app.delete("/found/delete")
+@app.delete("/found/delete", tags=["User Management"])
 def delete_user(user: User_Found_and_Delete_Schema):
     User = methods.get_user_by_username(user.username)
     if User is not None:
@@ -161,24 +182,146 @@ def delete_user(user: User_Found_and_Delete_Schema):
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
 
-@app.post("/found/show_all")
+@app.get("/get_current_user", tags=["User Management"])
+def current_user(current_user: dict = Depends(security.access_token_required)):
+    users_id = int(dict(current_user)["sub"])
+    user = methods.get_user_by_id(users_id)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Войдите для того чтобы увидеть свой профиль")
+    return user
+
+
+@app.post("/add_task", tags=["Task Management"])
+async def add_task(task: Task_Schema):
+    with new_session() as session:
+        # Получаем ID пользователя
+        user_id = methods.get_user_id_by_username2(task.username)
+        if not user_id:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+        # Проверяем, существует ли уже задача с таким названием у этого пользователя
+        existing_task = session.execute(
+            select(Tasks).where(
+                Tasks.title == task.title,
+                Tasks.employee_id == user_id # type: ignore
+            )
+        ).scalar_one_or_none()
+
+        if existing_task is None:
+            new_task = methods.create_task_with_deadline(user_id, task.title, task.description, task.deadline)
+            session.commit()
+            return {"message": "Task added", "task": new_task}
+
+        raise HTTPException(status_code=400, detail="Задача уже существует!")
+
+
+@app.patch("/set_task", tags=["Task Management"])
+def set_task(new_task: Task_Set_Schema):
+    with (new_session() as session):
+        t = session.execute(select(Tasks)
+                            .where(Tasks.employee_id == methods.get_user_id_by_username(new_task.username)
+                                   and Tasks.title == new_task.title)
+                            )
+
+        t = t.scalar_one_or_none()
+        if t is None:
+            raise HTTPException(status_code=404, detail="Задача не найдена, проверьте никнейм или задачу")
+
+        session.execute(update(Tasks).where(Tasks.employee_id == methods.get_user_id_by_username(new_task.username)
+                                            and Tasks.title == new_task.title)
+                        .values(title=new_task.new_title, description=new_task.new_description))
+        session.commit()
+        return {"message": "Задача успешно изменена!", "status": True}
+
+
+@app.delete("/delete_task", tags=["Task Management"])
+def delete_task(task: Task_Delete_Schema):
+    with (new_session() as session):
+        t = session.execute(select(Tasks)
+                            .where(Tasks.employee_id == methods.get_user_id_by_username(task.username) # type: ignore
+                                   , Tasks.title == task.title)
+                            )
+
+        t = t.scalars().all()
+        if t is None:
+            raise HTTPException(status_code=404, detail="Задача не найдена, проверьте никнейм или задачу")
+
+        session.execute(delete(Tasks)
+                        .where(Tasks.employee_id == methods.get_user_id_by_username(task.username) # type: ignore
+                               , Tasks.title == task.title)
+                        )
+        # Тест с g
+        session.commit()
+        return {"message": "Задача успешно удалена!", "status": True}
+
+
+@app.get("/get_user_tasks/{username}", tags=["Task Management"])
+def get_user_tasks(username: str):
+    user_tasks = methods.get_all_users_tasks(username)
+    if user_tasks is None:
+        raise HTTPException(status_code=404, detail="У пользователя нет действующих задач")
+    return user_tasks
+
+
+@app.get("/get_all_tasks")
+def get_all_tasks(current_user: dict = Depends(security.access_token_required)):
+    user_id = int(dict(current_user)["sub"])
+    role = is_manager(user_id)
+    if role != "manager":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    with new_session() as session:
+        all_tasks = session.execute(
+            select(Tasks)
+        ).scalars().all()
+
+        return all_tasks
+
+
+class Progress_Update_Schema(BaseModel):
+    task_title: str
+    progress: int = Field(ge=0, le=100)
+
+
+@app.patch("/tasks/{task_id}/progress", tags=["Task Management"])
+def update_progress(progress_data: Progress_Update_Schema, current_user: dict = Depends(security.access_token_required)):
+    """Обновить прогресс выполнения задачи"""
+    user_id = int(dict(current_user)["sub"])
+    with new_session() as session:
+        task = session.execute(select(Tasks).where(
+            Tasks.title == progress_data.task_title,
+            Tasks.employee_id == user_id
+        )).scalar_one_or_none()
+
+        if task is None:
+            raise HTTPException(status_code=404, detail="Задача не найдена")
+
+        session.execute(
+            update(Tasks)
+            .where(Tasks.title == progress_data.task_title)
+            .values(progress=progress_data.progress)
+        )
+        session.commit()
+        return {"message": "Прогресс обновлен", "progress": progress_data.progress}
+
+
+@app.post("/found/show_all", tags=["User Management"])
 def show_all():
     if methods.number_of_all_users() > 0:
         return methods.get_all_users()
     return {"status": True, "message": "Пользователи не найдены"}
 
 
-@app.get("/userSettings")
+@app.get("/userSettings", tags=["UI"])
 def UserSettings():
     return {"ЛОГИН ДЛЯ ВСЕХ"}
 
 
-@app.get("/mainWindowUser")
+@app.get("/mainWindowUser", tags=["UI"])
 def main_window_user():
     return {"Всякие таски, хуяски"}
 
 
-@app.get("/")
+@app.get("/", tags=["UI"])
 def main_page():
     return RedirectResponse(url="/login")
 

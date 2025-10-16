@@ -21,11 +21,11 @@ class Users(Base):
     surname = Column(String(45))
     created_at = Column(String, default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-    tasks = relationship("Task", back_populates="employee")
+    tasks = relationship("Tasks", back_populates="employee")
     comments = relationship("Comment", back_populates="user")
     settings = relationship("UserSettings", back_populates="user")
 
-class Task(Base):
+class Tasks(Base):
     __tablename__ = 'Tasks'
     id = Column(Integer, primary_key=True, autoincrement=True)
     employee_id = Column(Integer, ForeignKey('Users.id'))
@@ -50,7 +50,7 @@ class Comment(Base):
     attached_file = Column(BLOB)
     created_at = Column(String, default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-    task = relationship("Task", back_populates="comments")
+    task = relationship("Tasks", back_populates="comments")
     user = relationship("Users", back_populates="comments")
 
 
