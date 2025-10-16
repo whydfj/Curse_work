@@ -53,7 +53,7 @@ from authx import AuthX, AuthXConfig
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.params import Depends
 from pydantic import BaseModel, Field
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, or_
 from starlette.responses import RedirectResponse
 
 from DB_SQLite.data_base_work import new_session, Users, Tasks
@@ -78,7 +78,7 @@ class Task_Schema(BaseModel):
     username: str
     title: str
     description: str
-    deadline: Optional[datetime] = None
+    deadline: datetime | None
 
 
 class Task_Delete_Schema(BaseModel):
@@ -109,16 +109,15 @@ security = AuthX(config=config)
 app = FastAPI()
 
 
-def is_manager(current_user: dict = Depends(security.access_token_required)):
+def is_manager(user_id):
     """
     Получение информации о текущем пользователе
     """
-    user_id = int(dict(current_user)["sub"])
 
     with new_session() as session:
         users_role = session.execute(select(Users.role).where(Users.id == user_id))
 
-    return users_role.scalar() == "manager"
+    return users_role.scalar()
 
 
 @app.post("/login", tags=["Authentication"])
@@ -209,7 +208,7 @@ async def add_task(task: Task_Schema):
         ).scalar_one_or_none()
 
         if existing_task is None:
-            new_task = methods.create_task(user_id, task.title, task.description)
+            new_task = methods.create_task_with_deadline(user_id, task.title, task.description, task.deadline)
             session.commit()
             return {"message": "Task added", "task": new_task}
 
@@ -264,6 +263,20 @@ def get_user_tasks(username: str):
     return user_tasks
 
 
+@app.get("/get_all_tasks")
+def get_all_tasks(current_user: dict = Depends(security.access_token_required)):
+    user_id = int(dict(current_user)["sub"])
+    role = is_manager(user_id)
+    if role != "manager":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    with new_session() as session:
+        all_tasks = session.execute(
+            select(Tasks)
+        ).scalars().all()
+
+        return all_tasks
+
+
 class Progress_Update_Schema(BaseModel):
     task_title: str
     progress: int = Field(ge=0, le=100)
@@ -279,7 +292,7 @@ def update_progress(progress_data: Progress_Update_Schema, current_user: dict = 
             Tasks.employee_id == user_id
         )).scalar_one_or_none()
 
-        if not task:
+        if task is None:
             raise HTTPException(status_code=404, detail="Задача не найдена")
 
         session.execute(

@@ -108,7 +108,7 @@ class DatabaseManager:
             user_id = DatabaseManager().get_user_id_by_username(username)
 
             users_tasks = t_session.execute(
-                select(Tasks).where(Tasks.employee_id == user_id)
+                select(Tasks).where(Tasks.employee_id == user_id) # type: ignore
             )
 
             return users_tasks.scalars().all()
