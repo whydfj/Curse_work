@@ -14,7 +14,6 @@ class DatabaseManager:
     def get_user_by_username(username):
         return session.query(Users).filter(Users.username == username).first()
 
-
     @staticmethod
     def get_user_by_id(id: int):
         with new_session() as s:
@@ -26,7 +25,6 @@ class DatabaseManager:
                 return None
             return user
 
-
     @staticmethod
     def get_user_id_by_username(username):
         return session.query(Users).filter(Users.username == username).first().id
@@ -35,7 +33,7 @@ class DatabaseManager:
     def get_user_id_by_username2(username):
         with new_session() as s:
             return s.execute(
-                select(Users.id).where(Users.username == username) # type: ignore
+                select(Users.id).where(Users.username == username)  # type: ignore
             ).scalar()
 
     @staticmethod
@@ -67,7 +65,6 @@ class DatabaseManager:
         session.add(new_task)
         session.commit()
         return new_task
-
 
     @staticmethod
     def create_task_with_deadline(employee_id, title, description, deadline, status="running", progress=0):
@@ -108,7 +105,7 @@ class DatabaseManager:
             user_id = DatabaseManager().get_user_id_by_username(username)
 
             users_tasks = t_session.execute(
-                select(Tasks).where(Tasks.employee_id == user_id) # type: ignore
+                select(Tasks).where(Tasks.employee_id == user_id)  # type: ignore
             )
 
             return users_tasks.scalars().all()
@@ -136,3 +133,33 @@ class DatabaseManager:
         session.add(new_comment)
         session.commit()
         return new_comment
+
+    @staticmethod
+    def add_comment2(user_id, text, task_id):
+        with new_session() as s:
+            user = s.execute(
+                select(Users)
+                .where(user_id == Users.id)  # type: ignore
+            ).scalar_one_or_none()
+            task = s.execute(
+                select(Tasks)
+                .where(task_id == Tasks.id)  # type: ignore
+            ).scalar_one_or_none()
+            if user_id is None:
+                return None
+            if task is None:
+                return
+
+            if user.role != "manager":
+                if task.employee_id != user_id:
+                    return None
+
+            new_comment = Comment(
+                task_id=task_id,
+                text=text,
+                user_id=user_id
+            )
+
+            s.add(new_comment)
+            s.commit()
+            return new_comment
