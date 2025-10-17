@@ -1,7 +1,6 @@
-from fastapi import Depends
 from sqlalchemy import select
 
-from DB_SQLite.data_base_work import session, Users, Tasks, Comment, UserSettings, new_session
+from backend.DB_SQLite.data_base_work import session, Users, Tasks, Comment, new_session
 from Password_hash import passwordHash
 
 

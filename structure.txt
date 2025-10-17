@@ -1,0 +1,50 @@
+project_name/
+│
+├── backend/                        # Главная папка приложения
+│   ├── main.py                  # Точка входа (создание FastAPI приложения)
+│   ├── api/                     # Эндпоинты (маршруты)
+│   │   ├── __init__.py
+│   │   ├── v1/                  # Версия API
+│   │   │   ├── __init__.py
+│   │   │   ├── users.py         # Роуты для пользователей
+│   │   │   ├── auth.py          # Роуты для авторизации
+│   │   │   └── holidays.py      # Роуты для твоего функционала
+│   │
+│   ├── core/                    # Настройки проекта
+│   │   ├── __init__.py
+│   │   ├── config.py            # Конфигурации (настройки, env)
+│   │   └── security.py          # Логика JWT, хэширование паролей
+│   │
+│   ├── db/                      # Работа с БД
+│   │   ├── __init__.py
+│   │   ├── base.py              # Base = declarative_base()
+│   │   ├── models/              # SQLAlchemy ORM модели
+│   │   │   ├── __init__.py
+│   │   │   ├── user.py
+│   │   │   └── holiday.py
+│   │   └── session.py           # engine + sessionmaker
+│   │
+│   ├── schemas/                 # Pydantic-схемы (валидация входных/выходных данных)
+│   │   ├── __init__.py
+│   │   ├── user.py
+│   │   └── holiday.py
+│   │
+│   ├── services/                # Бизнес-логика (работа с БД и др.)
+│   │   ├── __init__.py
+│   │   ├── user_service.py
+│   │   └── holiday_service.py
+│   │
+│   └── tests/                   # Тесты
+│       ├── __init__.py
+│       ├── conftest.py          # фикстуры pytest
+│       ├── test_users.py
+│       └── test_holidays.py
+│
+├── alembic/                     # Миграции (если используешь Alembic)
+│   ├── versions/
+│   └── env.py
+│
+├── .env                         # Переменные окружения (DB_URL, SECRET_KEY)
+├── requirements.txt             # зависимости (или pyproject.toml)
+├── alembic.ini                  # конфиг alembic
+└── README.md
