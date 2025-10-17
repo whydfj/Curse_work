@@ -46,14 +46,13 @@ create_task(employee_id, title, description, status="running", progress=0) - с�
 get_login(username,password) (уже сам делал) - команда для авторизации пользователя(или админа).
 """
 from datetime import datetime
-from typing import Optional
 
 import uvicorn
 from authx import AuthX, AuthXConfig
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.params import Depends
 from pydantic import BaseModel, Field
-from sqlalchemy import select, update, delete, or_, BLOB
+from sqlalchemy import select, update, delete
 from starlette.responses import RedirectResponse
 
 from DB_SQLite.data_base_work import new_session, Users, Tasks
@@ -120,7 +119,7 @@ def is_manager(user_id):
     """
 
     with new_session() as session:
-        users_role = session.execute(select(Users.role).where(Users.id == user_id))
+        users_role = session.execute(select(Users.role).where(Users.id == user_id))  # type: ignore
 
     return users_role.scalar()
 
@@ -208,7 +207,7 @@ async def add_task(task: Task_Schema):
         existing_task = session.execute(
             select(Tasks).where(
                 Tasks.title == task.title,
-                Tasks.employee_id == user_id # type: ignore
+                Tasks.employee_id == user_id  # type: ignore
             )
         ).scalar_one_or_none()
 
@@ -240,19 +239,23 @@ def set_task(new_task: Task_Set_Schema):
 
 
 @app.delete("/delete_task", tags=["Task Management"])
-def delete_task(task: Task_Delete_Schema):
+def delete_task(task: Task_Delete_Schema, current_user: dict = Depends(security.access_token_required)):
     with (new_session() as session):
-        t = session.execute(select(Tasks)
-                            .where(Tasks.employee_id == methods.get_user_id_by_username(task.username) # type: ignore
-                                   , Tasks.title == task.title)
-                            )
 
-        t = t.scalars().all()
+        role = is_manager(int(dict(current_user)["sub"]))
+
+        if role != "manager":
+            raise HTTPException(status_code=403, detail="У вас нет доступа к данной функции")
+
+        t = session.execute(select(Tasks)
+                            .where(Tasks.employee_id == methods.get_user_id_by_username(task.username)  # type: ignore
+                                   , Tasks.title == task.title)
+                            ).scalars().all()
         if t is None:
             raise HTTPException(status_code=404, detail="Задача не найдена, проверьте никнейм или задачу")
 
         session.execute(delete(Tasks)
-                        .where(Tasks.employee_id == methods.get_user_id_by_username(task.username) # type: ignore
+                        .where(Tasks.employee_id == methods.get_user_id_by_username(task.username)  # type: ignore
                                , Tasks.title == task.title)
                         )
         # Тест с g
@@ -266,6 +269,17 @@ def get_user_tasks(username: str):
     if user_tasks is None:
         raise HTTPException(status_code=404, detail="У пользователя нет действующих задач")
     return user_tasks
+
+
+@app.get("/get_my_tasks", tags=["Task Management"])
+def get_my_tasks(current_user: dict = Depends(security.access_token_required)):
+    with new_session() as session:
+        user_id = int(dict(current_user)["sub"])
+        user_tasks = session.execute(
+            select(Tasks)
+            .where(Tasks.employee_id == user_id)
+        ).scalars().all()
+        return user_tasks
 
 
 @app.get("/get_all_tasks")
@@ -288,7 +302,8 @@ class Progress_Update_Schema(BaseModel):
 
 
 @app.patch("/tasks/{task_id}/progress", tags=["Task Management"])
-def update_progress(progress_data: Progress_Update_Schema, current_user: dict = Depends(security.access_token_required)):
+def update_progress(progress_data: Progress_Update_Schema,
+                    current_user: dict = Depends(security.access_token_required)):
     """Обновить прогресс выполнения задачи"""
     user_id = int(dict(current_user)["sub"])
     with new_session() as session:
@@ -327,6 +342,8 @@ def add_new_comment(new_comment: Comment_Schema, current_user: dict = Depends(se
     if new_comment is None:
         raise HTTPException(status_code=403, detail="Вам не доступна данная функция")
 
+    return {"status": True, "message": "Комментарий успешно добавлен"}
+
 
 @app.patch("/update_deadline")
 def update_deadline(deadline: Deadline_Set_Schema, current_user: dict = Depends(security.access_token_required)):
@@ -335,7 +352,7 @@ def update_deadline(deadline: Deadline_Set_Schema, current_user: dict = Depends(
     if role != "manager":
         raise HTTPException(status_code=403, detail="Извините, у вас нет доступа к данной функции")
     with new_session() as session:
-        task = session.execute(
+        session.execute(
             update(Tasks)
             .where(Tasks.id == deadline.task_id)
             .values(deadline=deadline.new_deadline)
