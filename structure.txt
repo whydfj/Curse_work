@@ -1,50 +1,32 @@
-project_name/
+Curse_work/
 │
-├── backend/                        # Главная папка приложения
-│   ├── main.py                  # Точка входа (создание FastAPI приложения)
-│   ├── api/                     # Эндпоинты (маршруты)
-│   │   ├── __init__.py
-│   │   ├── v1/                  # Версия API
-│   │   │   ├── __init__.py
-│   │   │   ├── users.py         # Роуты для пользователей
-│   │   │   ├── auth.py          # Роуты для авторизации
-│   │   │   └── holidays.py      # Роуты для твоего функционала
+├── backend/                             # Главная папка приложения
 │   │
-│   ├── core/                    # Настройки проекта
-│   │   ├── __init__.py
-│   │   ├── config.py            # Конфигурации (настройки, env)
-│   │   └── security.py          # Логика JWT, хэширование паролей
+│   ├── api/                             # Эндпоинты (роутеры FastAPI)
+│   │   ├── manager.py                   # Роуты и логика для менеджера
+│   │   └── user.py                      # Роуты и логика для пользователя
 │   │
-│   ├── db/                      # Работа с БД
-│   │   ├── __init__.py
-│   │   ├── base.py              # Base = declarative_base()
-│   │   ├── models/              # SQLAlchemy ORM модели
-│   │   │   ├── __init__.py
-│   │   │   ├── user.py
-│   │   │   └── holiday.py
-│   │   └── session.py           # engine + sessionmaker
+│   ├── core/                            # Базовые настройки и безопасность
+│   │   ├── config.py                    # Настройки приложения, пути, env
+│   │   └── security.py                  # Хэширование, JWT, авторизация
 │   │
-│   ├── schemas/                 # Pydantic-схемы (валидация входных/выходных данных)
-│   │   ├── __init__.py
-│   │   ├── user.py
-│   │   └── holiday.py
+│   ├── DB_SQLite/                       # Работа с базой данных SQLite
+│   │   ├── Coursework.db                # Файл базы данных
+│   │   ├── data_base_structure.py       # ORM-модели SQLAlchemy
+│   │   ├── data_base_work.py            # Методы взаимодействия с БД
+│   │   └── database_shortcat.py         # Утилиты/шорткаты для БД
 │   │
-│   ├── services/                # Бизнес-логика (работа с БД и др.)
-│   │   ├── __init__.py
-│   │   ├── user_service.py
-│   │   └── holiday_service.py
+│   ├── schemas/                         # Pydantic-схемы для запросов/ответов
+│   │   ├── tasks.py                     # Схемы задач
+│   │   └── users.py                     # Схемы пользователей
 │   │
-│   └── tests/                   # Тесты
-│       ├── __init__.py
-│       ├── conftest.py          # фикстуры pytest
-│       ├── test_users.py
-│       └── test_holidays.py
+│   ├── test_api/                        # Тестовые эндпоинты или unit-тесты
+│   │   ├── __init__.py
+│   │   └── main.py                      # Точка входа (FastAPI app)
+│   │
+│   └── __init__.py                      # Помечает пакет как модуль Python
 │
-├── alembic/                     # Миграции (если используешь Alembic)
-│   ├── versions/
-│   └── env.py
-│
-├── .env                         # Переменные окружения (DB_URL, SECRET_KEY)
-├── requirements.txt             # зависимости (или pyproject.toml)
-├── alembic.ini                  # конфиг alembic
-└── README.md
+├── .gitignore                           # Игнорируемые файлы Git
+├── Coursework.db                        # Дубликат или тестовая БД
+├── Password_hash.py                     # Скрипт для хэширования паролей
+└── structure.txt                        # Документация по структуре проекта
