@@ -7,11 +7,19 @@ from Password_hash import passwordHash
 class DatabaseManager:
     @staticmethod
     def get_all_users():
-        return session.query(Users).all()
+        with new_session() as s:
+            return s.execute(
+                select(Users)
+            ).scalars().all()
+
 
     @staticmethod
     def get_user_by_username(username):
-        return session.query(Users).filter(Users.username == username).first()
+        with new_session() as s:
+            return s.execute(
+                select(Users)
+                .where(Users.username == username)  # type: ignore
+            ).scalar_one_or_none()
 
     @staticmethod
     def get_user_by_id(id: int):
@@ -26,7 +34,11 @@ class DatabaseManager:
 
     @staticmethod
     def get_user_id_by_username(username):
-        return session.query(Users).filter(Users.username == username).first().id
+        with new_session() as s:
+            return s.execute(
+                select(Users.id)
+                .where(Users.username == username)  # type: ignore
+            ).scalar()
 
     @staticmethod
     def get_user_id_by_username2(username):
@@ -37,7 +49,11 @@ class DatabaseManager:
 
     @staticmethod
     def get_tasks_by_user(user_id):
-        return session.query(Tasks).filter(Tasks.employee_id == user_id).all()
+        with new_session() as s:
+            return s.execute(
+                select(Tasks)
+                .where(Tasks.employee_id == user_id)  # type: ignore
+            ).scalars().all()
 
     @staticmethod
     def create_user(username, password_hash, role, name, surname):
@@ -48,9 +64,10 @@ class DatabaseManager:
             name=name,
             surname=surname
         )
-        session.add(new_user)
-        session.commit()
-        return new_user
+        with new_session() as s:
+            s.add(new_user)
+            s.commit()
+            return new_user
 
     @staticmethod
     def create_task(employee_id, title, description, status="running", progress=0):
@@ -61,9 +78,10 @@ class DatabaseManager:
             status=status,
             progress=progress
         )
-        session.add(new_task)
-        session.commit()
-        return new_task
+        with new_session() as s:
+            s.add(new_task)
+            s.commit()
+            return new_task
 
     @staticmethod
     def create_task_with_deadline(employee_id, title, description, deadline, status="running", progress=0):
@@ -75,9 +93,10 @@ class DatabaseManager:
             progress=progress,
             deadline=deadline
         )
-        session.add(new_task)
-        session.commit()
-        return new_task
+        with new_session() as s:
+            s.add(new_task)
+            s.commit()
+            return new_task
 
     @staticmethod
     def get_login(username, password):
@@ -86,12 +105,18 @@ class DatabaseManager:
 
     @staticmethod
     def delete_user(username):
-        user_to_delete = session.query(Users).filter(Users.username == username).first()
-        if user_to_delete is None:
-            return None
-        session.delete(user_to_delete)
-        session.commit()
-        return True
+        with new_session() as s:
+            user_to_delete = s.execute(
+                select(Users)
+                .where(Users.username == username)  # type: ignore
+            )
+            if user_to_delete is None:
+                return None
+            s.delete(user_to_delete)
+            s.commit()
+            return True
+
+
 
     @staticmethod
     def number_of_all_users():
@@ -111,27 +136,33 @@ class DatabaseManager:
 
     @staticmethod
     def add_comment(task_id: int, user_id: int, text: str, attached_file=None):
-
-        user = session.query(Users).filter(Users.id == user_id).first()
-        if user is None:
-            return None
-
-        task = session.query(Tasks).filter(Tasks.id == task_id).first()
-        if task is None:
-            return None
-
-        if user.role != "manager":
-            if task.employee_id != user_id:
+        with new_session() as s:
+            user = s.execute(
+                select(Users)
+                .where(Users.id == user_id)
+            ).scalar_one_or_none()
+            if user is None:
                 return None
-        new_comment = Comment(
-            task_id=task_id,
-            text=text,
-            user_id=user_id,
-            attached_file=attached_file,
-        )
-        session.add(new_comment)
-        session.commit()
-        return new_comment
+
+            task = s.execute(
+                select(Tasks)
+                .where(Tasks.id == task_id)
+            ).scalar_one_or_none()
+            if task is None:
+                return None
+
+            if user.role != "manager":
+                if task.employee_id != user_id:
+                    return None
+            new_comment = Comment(
+                task_id=task_id,
+                text=text,
+                user_id=user_id,
+                attached_file=attached_file,
+            )
+            s.add(new_comment)
+            s.commit()
+            return new_comment
 
     @staticmethod
     def add_comment2(user_id, text, task_id):

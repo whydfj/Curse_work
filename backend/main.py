@@ -45,17 +45,11 @@ create_user(username, password_hash, role, name, surname) - создать юз�
 create_task(employee_id, title, description, status="running", progress=0) - создать таск для определенного юзера
 get_login(username,password) (уже сам делал) - команда для авторизации пользователя(или админа).
 """
-from datetime import datetime
 
 import uvicorn
-from authx import AuthX, AuthXConfig
-from fastapi import FastAPI, HTTPException, Response
-from fastapi.params import Depends
-from pydantic import BaseModel, Field
-from sqlalchemy import select
+from fastapi import FastAPI
 from starlette.responses import RedirectResponse
 
-from backend.DB_SQLite.data_base_work import new_session, Users, Tasks
 from backend.api import manager, user
 
 app = FastAPI()
