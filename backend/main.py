@@ -47,7 +47,7 @@ get_login(username,password) (уже сам делал) - команда для 
 """
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from starlette.responses import RedirectResponse
 
 from backend.api import manager, user

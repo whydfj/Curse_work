@@ -12,13 +12,13 @@ router = APIRouter()
 
 
 @router.post("/login", tags=["Authentication"])
-def login(user: User_Login_Schema, response: Response):
+async def login(user: User_Login_Schema, response: Response):
     # with new_session() as session:
     #     new_user = session.execute(select(Users).where(Users.username == user.username)).scalar_one_or_none()
     #     if new_user is None:
     #         raise HTTPException(status_code=409, detail="User is not found")
     #     return {"message": "Пользователь найден", "sss": new_user}
-    t_user = methods.get_login(user.username, user.password)
+    t_user = await methods.get_login(user.username, user.password)
     if t_user is None:
         raise HTTPException(status_code=409, detail="User is not found")
 
@@ -28,16 +28,15 @@ def login(user: User_Login_Schema, response: Response):
 
 
 @router.post("/logout", tags=["Authentication"])
-def logout(response: Response):
+async def logout(response: Response):
     response.delete_cookie(config.JWT_ACCESS_COOKIE_NAME, secure=False, httponly=True, samesite="lax")
     return {"message": "Вы успешно вышли из системы", "status": True}
 
 
 @router.post("/found", tags=["User Management"])
-def found_user(user: User_Found_and_Delete_Schema):
-    User = methods.get_user_by_username(user.username)
+async def found_user(user: User_Found_and_Delete_Schema):
+    User = await methods.get_user_by_username(user.username)
     if User is not None:
-        methods.get_user_by_username(user.username)
         return {"status": True, "message": "Пользователь найден",
                 "name_user": User.name, "surname_user": User.surname,
                 "role_user": User.role, "created_at": User.created_at}
@@ -46,62 +45,63 @@ def found_user(user: User_Found_and_Delete_Schema):
 
 
 @router.delete("/found/delete", tags=["User Management"])
-def delete_user(user: User_Found_and_Delete_Schema):
-    User = methods.get_user_by_username(user.username)
+async def delete_user(user: User_Found_and_Delete_Schema):
+    User = await methods.get_user_by_username(user.username)
     if User is not None:
-        methods.delete_user(user.username)
+        await methods.delete_user(user.username)
         return {"status": True, "message": "Пользователь удален"}
     else:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
 
 @router.get("/get_current_user", tags=["User Management"])
-def current_user(current_user: dict = Depends(security.access_token_required)):
+async def current_user(current_user: dict = Depends(security.access_token_required)):
     users_id = int(dict(current_user)["sub"])
-    user = methods.get_user_by_id(users_id)
+    user = await methods.get_user_by_id(users_id)
     if user is None:
         raise HTTPException(status_code=401, detail="Войдите для того чтобы увидеть свой профиль")
     return user
 
 
 @router.get("/get_my_tasks", tags=["Task Management"])
-def get_my_tasks(current_user: dict = Depends(security.access_token_required)):
-    with new_session() as session:
+async def get_my_tasks(current_user: dict = Depends(security.access_token_required)):
+    async with new_session() as session:
         user_id = int(dict(current_user)["sub"])
-        user_tasks = session.execute(
+        user_tasks = await session.execute(
             select(Tasks)
             .where(Tasks.employee_id == user_id)
-        ).scalars().all()
-        return user_tasks
+        )
+        return user_tasks.scalars().all()
 
 
 @router.patch("/tasks/{task_id}/progress", tags=["Task Management"])
-def update_progress(progress_data: Progress_Update_Schema,
+async def update_progress(progress_data: Progress_Update_Schema,
                     current_user: dict = Depends(security.access_token_required)):
     """Обновить прогресс выполнения задачи"""
     user_id = int(dict(current_user)["sub"])
-    with new_session() as session:
-        task = session.execute(select(Tasks).where(
+    async with new_session() as session:
+        task = await session.execute(select(Tasks).where(
             Tasks.title == progress_data.task_title,
             Tasks.employee_id == user_id
-        )).scalar_one_or_none()
+        ))
+        task = task.scalar_one_or_none()
 
         if task is None:
             raise HTTPException(status_code=404, detail="Задача не найдена")
 
-        session.execute(
+        await session.execute(
             update(Tasks)
             .where(Tasks.title == progress_data.task_title)
             .values(progress=progress_data.progress)
         )
-        session.commit()
+        await session.commit()
         return {"message": "Прогресс обновлен", "progress": progress_data.progress}
 
 
 @router.post("/add_new_comment")
-def add_new_comment(new_comment: Comment_Schema, current_user: dict = Depends(security.access_token_required)):
+async def add_new_comment(new_comment: Comment_Schema, current_user: dict = Depends(security.access_token_required)):
     user_id = int(dict(current_user)["sub"])
-    new_comment = methods.add_comment(
+    new_comment = await methods.add_comment(
         task_id=new_comment.task_id,
         user_id=user_id,
         attached_file=new_comment.attached_file,

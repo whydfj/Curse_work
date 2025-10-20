@@ -1,62 +1,70 @@
 from sqlalchemy import select
 
-from backend.DB_SQLite.data_base_work import session, Users, Tasks, Comment, new_session
+from backend.DB_SQLite.data_base_work import Users, Tasks, Comment, new_session
 from Password_hash import passwordHash
 
 
 class DatabaseManager:
     @staticmethod
-    def get_all_users():
-        with new_session() as s:
-            return s.execute(
+    async def get_all_users():
+        async with new_session() as s:
+            res = await s.execute(
                 select(Users)
-            ).scalars().all()
-
+            )
+            return res.scalars().all()
 
     @staticmethod
-    def get_user_by_username(username):
-        with new_session() as s:
-            return s.execute(
+    async def get_user_by_username(username):
+        async with new_session() as s:
+            res = await s.execute(
                 select(Users)
                 .where(Users.username == username)  # type: ignore
-            ).scalar_one_or_none()
+            )
+            return res.scalar_one_or_none()
 
     @staticmethod
-    def get_user_by_id(id: int):
-        with new_session() as s:
-            user = s.execute(
+    async def get_user_by_id(id: int):
+        async with (new_session() as s):
+            user = await s.execute(
                 select(Users)
                 .where(Users.id == id)
-            ).scalar_one_or_none()
+            )
+            user = user.scalar_one_or_none()
             if user is None:
                 return None
             return user
 
     @staticmethod
-    def get_user_id_by_username(username):
-        with new_session() as s:
-            return s.execute(
+    async def get_user_id_by_username(username):
+        async with new_session() as s:
+            res = await s.execute(
                 select(Users.id)
                 .where(Users.username == username)  # type: ignore
-            ).scalar()
+            )
+            res = res.scalar()
+            return res
 
     @staticmethod
-    def get_user_id_by_username2(username):
-        with new_session() as s:
-            return s.execute(
+    async def get_user_id_by_username2(username):
+        async with new_session() as s:
+            res = await s.execute(
                 select(Users.id).where(Users.username == username)  # type: ignore
-            ).scalar()
+            )
+            res = res.scalar()
+            return res
 
     @staticmethod
-    def get_tasks_by_user(user_id):
-        with new_session() as s:
-            return s.execute(
+    async def get_tasks_by_user(user_id):
+        async with new_session() as s:
+            res = await s.execute(
                 select(Tasks)
                 .where(Tasks.employee_id == user_id)  # type: ignore
-            ).scalars().all()
+            )
+            res = res.scalars().all()
+            return res
 
     @staticmethod
-    def create_user(username, password_hash, role, name, surname):
+    async def create_user(username, password_hash, role, name, surname):
         new_user = Users(
             username=username,
             password_hash=passwordHash.blake2b_hash(password_hash),
@@ -64,13 +72,13 @@ class DatabaseManager:
             name=name,
             surname=surname
         )
-        with new_session() as s:
+        async with new_session() as s:
             s.add(new_user)
-            s.commit()
+            await s.commit()
             return new_user
 
     @staticmethod
-    def create_task(employee_id, title, description, status="running", progress=0):
+    async def create_task(employee_id, title, description, status="running", progress=0):
         new_task = Tasks(
             employee_id=employee_id,
             title=title,
@@ -78,13 +86,13 @@ class DatabaseManager:
             status=status,
             progress=progress
         )
-        with new_session() as s:
+        async with new_session() as s:
             s.add(new_task)
-            s.commit()
+            await s.commit()
             return new_task
 
     @staticmethod
-    def create_task_with_deadline(employee_id, title, description, deadline, status="running", progress=0):
+    async def create_task_with_deadline(employee_id, title, description, deadline, status="running", progress=0):
         new_task = Tasks(
             employee_id=employee_id,
             title=title,
@@ -93,61 +101,70 @@ class DatabaseManager:
             progress=progress,
             deadline=deadline
         )
-        with new_session() as s:
+        async with new_session() as s:
             s.add(new_task)
-            s.commit()
+            await s.commit()
             return new_task
 
     @staticmethod
-    def get_login(username, password):
-        password = passwordHash.blake2b_hash(password)
-        return session.query(Users).filter(Users.username == username, Users.password_hash == password).scalar()
+    async def get_login(username, password):
+        password_hash = passwordHash.blake2b_hash(password)
+        async with new_session() as s:
+            result = await s.execute(
+                select(Users).where(
+                    Users.username == username,
+                    Users.password_hash == password_hash
+                )
+            )
+            return result.scalar_one_or_none()
 
     @staticmethod
-    def delete_user(username):
-        with new_session() as s:
-            user_to_delete = s.execute(
+    async def delete_user(username):
+        async with new_session() as s:
+            user_to_delete = await s.execute(
                 select(Users)
                 .where(Users.username == username)  # type: ignore
             )
+            user_to_delete = user_to_delete.scalar_one_or_none()
             if user_to_delete is None:
                 return None
-            s.delete(user_to_delete)
-            s.commit()
+            await s.delete(user_to_delete)
+            await s.commit()
             return True
 
-
+    @staticmethod
+    async def number_of_all_users():
+        async with new_session() as s:
+            result = await s.execute(select(Users))
+            return len(result.scalars().all())
 
     @staticmethod
-    def number_of_all_users():
-        all_user_count = session.query(Users).count()
-        return all_user_count
+    async def get_all_users_tasks(username: str):
+        async with new_session() as t_session:
+            user_id = await DatabaseManager().get_user_id_by_username(username)
 
-    @staticmethod
-    def get_all_users_tasks(username: str):
-        with new_session() as t_session:
-            user_id = DatabaseManager().get_user_id_by_username(username)
-
-            users_tasks = t_session.execute(
+            users_tasks = await t_session.execute(
                 select(Tasks).where(Tasks.employee_id == user_id)  # type: ignore
             )
 
             return users_tasks.scalars().all()
 
     @staticmethod
-    def add_comment(task_id: int, user_id: int, text: str, attached_file=None):
-        with new_session() as s:
-            user = s.execute(
+    async def add_comment(task_id: int, user_id: int, text: str, attached_file=None):
+        async with new_session() as s:
+            user = await s.execute(
                 select(Users)
                 .where(Users.id == user_id)
-            ).scalar_one_or_none()
+            )
+            user = user.scalar_one_or_none()
             if user is None:
                 return None
 
-            task = s.execute(
+            task = await s.execute(
                 select(Tasks)
                 .where(Tasks.id == task_id)
-            ).scalar_one_or_none()
+            )
+            task = task.scalar_one_or_none()
             if task is None:
                 return None
 
@@ -161,20 +178,22 @@ class DatabaseManager:
                 attached_file=attached_file,
             )
             s.add(new_comment)
-            s.commit()
+            await s.commit()
             return new_comment
 
     @staticmethod
-    def add_comment2(user_id, text, task_id):
-        with new_session() as s:
-            user = s.execute(
+    async def add_comment2(user_id, text, task_id):
+        async with new_session() as s:
+            user = await s.execute(
                 select(Users)
                 .where(user_id == Users.id)  # type: ignore
-            ).scalar_one_or_none()
-            task = s.execute(
+            )
+            user = user.scalar_one_or_none()
+            task = await s.execute(
                 select(Tasks)
                 .where(task_id == Tasks.id)  # type: ignore
-            ).scalar_one_or_none()
+            )
+            task = task.scalar_one_or_none()
             if user_id is None:
                 return None
             if task is None:
@@ -191,5 +210,5 @@ class DatabaseManager:
             )
 
             s.add(new_comment)
-            s.commit()
+            await s.commit()
             return new_comment

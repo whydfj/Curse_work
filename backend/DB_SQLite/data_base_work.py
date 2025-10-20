@@ -1,12 +1,15 @@
+import asyncio
+
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Text, BLOB, DateTime
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import relationship, sessionmaker, declarative_base
 from datetime import datetime, timedelta
 
 
 #Подключение к бд
-engine = create_engine("sqlite:///Coursework.db")
-Session = sessionmaker(bind=engine)
-new_session = sessionmaker(bind=engine)
+engine = create_async_engine("sqlite+aiosqlite:///Coursework.db")
+Session = async_sessionmaker(bind=engine)
+new_session = async_sessionmaker(bind=engine)
 
 Base = declarative_base()
 
@@ -65,8 +68,22 @@ class UserSettings(Base):
     user = relationship("Users", back_populates="settings")
 
 
-Base.metadata.create_all(bind=engine)
+async def init_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
 
 
-session = Session()
+# Пример использования
+async def main():
+    # Инициализация БД
+    await init_db()
+
+# В конце файла добавьте:
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
+
+
+
 
