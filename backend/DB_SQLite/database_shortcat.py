@@ -212,3 +212,29 @@ class DatabaseManager:
             s.add(new_comment)
             await s.commit()
             return new_comment
+
+    @staticmethod
+    async def delete_comment_with_comment_id_and_user_id(comment_id: int, user_id: int):
+        async with new_session() as s:
+            comment_result = await s.execute(
+                select(Comment)
+                .where(Comment.id == comment_id)
+            )
+            comment = comment_result.scalar_one_or_none()
+            if comment is None:
+                return None
+            user_result = await s.execute(
+                select(Users)
+                .where(Users.id == user_id)
+            )
+            user = user_result.scalar_one_or_none()
+
+            if user is None:
+                return None
+
+            if user.role != "manager" and comment.user_id != user_id:
+                return None
+
+            await s.delete(comment)
+            await s.commit()
+            return True

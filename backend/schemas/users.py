@@ -22,3 +22,6 @@ class Comment_Schema(BaseModel):
     task_id: int
     text: str
     attached_file: None
+
+class DeleteCommentSchema(BaseModel):
+    comment_id: int

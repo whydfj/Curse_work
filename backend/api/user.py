@@ -4,9 +4,8 @@ from sqlalchemy import select, update
 from backend.DB_SQLite.data_base_work import new_session, Tasks
 from backend.core.security import security, config
 from backend.schemas.tasks import Progress_Update_Schema
-from backend.schemas.users import User_Login_Schema, User_Found_and_Delete_Schema, Comment_Schema
-from backend.DB_SQLite.database_shortcat import DatabaseManager as methods
-
+from backend.schemas.users import User_Login_Schema, User_Found_and_Delete_Schema, Comment_Schema, DeleteCommentSchema
+from backend.DB_SQLite.database_shortcat import DatabaseManager as methods, DatabaseManager
 
 router = APIRouter()
 
@@ -112,4 +111,18 @@ async def add_new_comment(new_comment: Comment_Schema, current_user: dict = Depe
 
     return {"status": True, "message": "Комментарий успешно добавлен"}
 
+@router.delete("/delete_comment", tags=["User Management"])
+async def delete_comment(comment_data: DeleteCommentSchema, current_user: dict = Depends(security.access_token_required)):
+    user_id = int(dict(current_user)["sub"])
+    delete_result = await DatabaseManager.delete_comment_with_comment_id_and_user_id(
+        comment_id=comment_data.comment_id,
+        user_id=user_id
+    )
 
+    if delete_result is None:
+        raise HTTPException(
+            status_code=403,
+            detail="Вам не доступна данная функция или комментарий не найден"
+        )
+
+    return {"status": True, "message": "Комментарий успешно удален"}
