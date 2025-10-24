@@ -12,11 +12,6 @@ router = APIRouter()
 
 @router.post("/login", tags=["Authentication"])
 async def login(user: User_Login_Schema, response: Response):
-    # with new_session() as session:
-    #     new_user = session.execute(select(Users).where(Users.username == user.username)).scalar_one_or_none()
-    #     if new_user is None:
-    #         raise HTTPException(status_code=409, detail="User is not found")
-    #     return {"message": "Пользователь найден", "sss": new_user}
     t_user = await methods.get_login(user.username, user.password)
     if t_user is None:
         raise HTTPException(status_code=409, detail="User is not found")

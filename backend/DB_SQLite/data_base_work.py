@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Text, BLOB, DateTime
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -6,8 +7,10 @@ from sqlalchemy.orm import relationship, sessionmaker, declarative_base
 from datetime import datetime, timedelta
 
 
+DB_PATH = os.path.join(os.path.dirname(__file__), "Coursework.db")
+
 #Подключение к бд
-engine = create_async_engine("sqlite+aiosqlite:///Coursework.db")
+engine = create_async_engine(f"sqlite+aiosqlite:///{DB_PATH}")
 Session = async_sessionmaker(bind=engine)
 new_session = async_sessionmaker(bind=engine)
 
@@ -23,6 +26,7 @@ class Users(Base):
     name = Column(String(45))
     surname = Column(String(45))
     created_at = Column(String, default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    email_user = Column(String(60))
 
     tasks = relationship("Tasks", back_populates="employee")
     comments = relationship("Comment", back_populates="user")

@@ -1,7 +1,13 @@
-from sqlalchemy import select
+import smtplib
+
+from sqlalchemy import select, or_
 
 from backend.DB_SQLite.data_base_work import Users, Tasks, Comment, new_session
 from Password_hash import passwordHash
+from backend.core.config import EMAIL_CONFIG
+
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 
 class DatabaseManager:
@@ -64,17 +70,19 @@ class DatabaseManager:
             return res
 
     @staticmethod
-    async def create_user(username, password_hash, role, name, surname):
+    async def create_user(username, password_hash, role, name, surname,email_user):
         new_user = Users(
             username=username,
             password_hash=passwordHash.blake2b_hash(password_hash),
             role=role,
             name=name,
-            surname=surname
+            surname=surname,
+            email_user = email_user
         )
         async with new_session() as s:
             s.add(new_user)
             await s.commit()
+            await s.refresh(new_user)
             return new_user
 
     @staticmethod
@@ -107,12 +115,15 @@ class DatabaseManager:
             return new_task
 
     @staticmethod
-    async def get_login(username, password):
+    async def get_login(login: str, password):
         password_hash = passwordHash.blake2b_hash(password)
         async with new_session() as s:
             result = await s.execute(
                 select(Users).where(
-                    Users.username == username,
+                or_(
+                    Users.username == login,
+                    Users.email_user == login
+                    ),
                     Users.password_hash == password_hash
                 )
             )
@@ -238,3 +249,67 @@ class DatabaseManager:
             await s.delete(comment)
             await s.commit()
             return True
+
+    @staticmethod
+    async def send_registration_email(user_email: str, username: str, password: str):
+        try:
+
+            print(f"Отправка email через Yandex: {EMAIL_CONFIG.SENDER_EMAIL} -> {user_email}")
+
+            message = MIMEMultipart()
+            message["From"] = EMAIL_CONFIG.SENDER_EMAIL
+            message["To"] = user_email
+            message["Subject"] = "Добро пожаловать в нашу систему!"
+
+            body = f"""
+            <html>
+                <body style="font-family: Arial, sans-serif;">
+                    <h2>Добро пожаловать в систему!</h2>
+                    <p>Здравствуйте, <strong>{username}</strong>!</p>
+                    <p>Ваша учетная запись была успешно создана.</p>
+
+                    <div style="background-color: #f5f5f5; padding: 15px; margin: 15px 0; border-radius: 5px;">
+                        <h3>Ваши данные для входа:</h3>
+                        <p><strong>Логин:</strong> {username} или ваш email</p>
+                        <p><strong>Пароль:</strong> {password}</p>
+                    </div>
+
+                    <p>Рекомендуем сменить пароль после первого входа.</p>
+                    <br>
+                    <p>С уважением,<br>Команда SkillTracker</p>
+                </body>
+            </html>
+            """
+
+            message.attach(MIMEText(body, "html"))
+
+            with smtplib.SMTP(EMAIL_CONFIG.SMTP_SERVER, EMAIL_CONFIG.SMTP_PORT) as server:
+                server.starttls()  # Включаем шифрование
+                print("STARTTLS соединение установлено")
+
+                print(f"Логин: {EMAIL_CONFIG.SENDER_EMAIL}")
+                server.login(EMAIL_CONFIG.SENDER_EMAIL, EMAIL_CONFIG.SENDER_PASSWORD)
+                print("Авторизация успешна")
+
+                server.send_message(message)
+                print("Письмо отправлено")
+
+            print(f"Письмо отправлено на {user_email}")
+            return True
+
+        except Exception as e:
+            print(f"Ошибка при отправке email: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+    @staticmethod
+    async def get_user_by_username_or_email(username: str, email: str):
+        """Проверяет существование пользователя по username или email"""
+        async with new_session() as s:
+            result = await s.execute(
+                select(Users).where(
+                    or_(Users.username == username, Users.email_user == email)
+                )
+            )
+            return result.scalar_one_or_none()
