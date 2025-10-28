@@ -77,7 +77,7 @@ class DatabaseManager:
             role=role,
             name=name,
             surname=surname,
-            email_user = email_user
+            email_user=email_user
         )
         async with new_session() as s:
             s.add(new_user)
