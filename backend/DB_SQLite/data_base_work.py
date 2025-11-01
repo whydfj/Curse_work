@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+import asyncio
+=======
+>>>>>>> 09a7153d2c044df1c2b53cc806a4f81f7b073bfd
 import os
 
 from sqlalchemy import Column, Integer, String, ForeignKey, Text, BLOB, DateTime
@@ -8,7 +12,11 @@ from datetime import datetime, timedelta
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "Coursework.db")
 
+<<<<<<< HEAD
+#Подключение к бд
+=======
 #  Подключение к бд
+>>>>>>> 09a7153d2c044df1c2b53cc806a4f81f7b073bfd
 engine = create_async_engine(f"sqlite+aiosqlite:///{DB_PATH}")
 Session = async_sessionmaker(bind=engine)
 new_session = async_sessionmaker(bind=engine)
