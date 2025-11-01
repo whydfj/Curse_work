@@ -42,8 +42,7 @@ async def create_user(background_tasks: BackgroundTasks, user: User_Create_Schem
 
     return {
         "status": True,
-        "message": "Пользователь создан успешно! Уведомление отправлено на email.",
-        "user_id": new_user.id
+        "message": "Пользователь создан успешно! Уведомление отправлено на email."
     }
 
 

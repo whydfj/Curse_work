@@ -2,7 +2,7 @@ import smtplib
 
 from sqlalchemy import select, or_
 
-from backend.DB_SQLite.data_base_work import Users, Tasks, Comment, new_session
+from backend.DB_SQLite.data_base_work import Users, Tasks, Comment, new_session, UserSettings
 from Password_hash import passwordHash
 from backend.core.config import EMAIL_CONFIG
 
@@ -70,21 +70,31 @@ class DatabaseManager:
             return res
 
     @staticmethod
-    async def create_user(username, password_hash, role, name, surname,email_user):
-        new_user = Users(
-            username=username,
-            password_hash=passwordHash.blake2b_hash(password_hash),
-            role=role,
-            name=name,
-            surname=surname,
-            email_user=email_user
-        )
+    async def create_user(username, password_hash, role, name, surname, email_user):
         async with new_session() as s:
+            # Создаем пользователя
+            new_user = Users(
+                username=username,
+                password_hash=passwordHash.blake2b_hash(password_hash),
+                role=role,
+                name=name,
+                surname=surname,
+                email_user=email_user
+            )
             s.add(new_user)
-            await s.commit()
-            await s.refresh(new_user)
-            return new_user
+            await s.flush()  # Получаем ID без коммита
 
+            # Создаем настройки в той же транзакции
+            users_settings = UserSettings(
+                employee_id=new_user.id,
+                avatar=None
+            )
+            s.add(users_settings)
+
+            await s.commit()  # Коммитим обе записи вместе
+            await s.refresh(new_user)
+
+            return {"user": new_user, "settings": users_settings}
     @staticmethod
     async def create_task(employee_id, title, description, status="running", progress=0):
         new_task = Tasks(

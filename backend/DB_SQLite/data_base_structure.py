@@ -69,3 +69,12 @@ with sq.connect(DB_PATH) as con:
         INSERT INTO Users(username,password_hash,role,name,surname,email_user)
         VALUES('user','4361be62001d25deb2bd85fab3e46011afae57539026d8d37d57f45e29571271','employee','Aleksander','Shnaider','globalfetish666@gmail.com')
     ''')#пароль для user 123456
+    cur.execute('''
+        INSERT INTO User_settings(employee_id,avatar)
+        VALUES('1','None')
+        ''')  # пароль для админа - password
+    cur.execute('''
+        INSERT INTO User_settings(employee_id,avatar)
+        VALUES('2','None')
+        ''')  # пароль для админа - password
+

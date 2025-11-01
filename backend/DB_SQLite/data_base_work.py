@@ -64,9 +64,9 @@ class UserSettings(Base):
     __tablename__ = 'User_settings'
 
     employee_id = Column(Integer, ForeignKey('Users.id'), primary_key=True)
-    theme_style = Column(Integer)
-    language_app = Column(String(15))
-    avatar = Column(BLOB)
+    theme_style = Column(Integer, default=0)
+    language_app = Column(String(15), default="russian")
+    avatar = Column(BLOB, default=None)
 
     user = relationship("Users", back_populates="settings")
 

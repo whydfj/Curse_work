@@ -1,10 +1,11 @@
 from fastapi import HTTPException, Response, APIRouter, Depends
 from sqlalchemy import select, update
 
-from backend.DB_SQLite.data_base_work import new_session, Tasks
+from backend.DB_SQLite.data_base_work import new_session, Tasks, UserSettings
 from backend.core.security import security, config
 from backend.schemas.tasks import Progress_Update_Schema
-from backend.schemas.users import User_Login_Schema, User_Found_and_Delete_Schema, Comment_Schema, DeleteCommentSchema
+from backend.schemas.users import (User_Login_Schema, User_Found_and_Delete_Schema, Comment_Schema, DeleteCommentSchema,
+                                   Update_Settings_Schema)
 from backend.DB_SQLite.database_shortcat import DatabaseManager as methods, DatabaseManager
 
 router = APIRouter()
@@ -106,6 +107,7 @@ async def add_new_comment(new_comment: Comment_Schema, current_user: dict = Depe
 
     return {"status": True, "message": "Комментарий успешно добавлен"}
 
+
 @router.delete("/delete_comment", tags=["User Management"])
 async def delete_comment(comment_data: DeleteCommentSchema, current_user: dict = Depends(security.access_token_required)):
     user_id = int(dict(current_user)["sub"])
@@ -121,3 +123,28 @@ async def delete_comment(comment_data: DeleteCommentSchema, current_user: dict =
         )
 
     return {"status": True, "message": "Комментарий успешно удален"}
+
+
+@router.patch("/reset_settings", tags=["Settings"])
+async def update_settings(new_settings: Update_Settings_Schema, user: dict = Depends(security.access_token_required)):
+    update_data = {}
+    user_id = int(dict(user)["sub"])
+
+    if new_settings.new_lang is not None and new_settings.new_lang != "string":
+        update_data["language_app"] = new_settings.new_lang
+
+    if new_settings.new_theme is not None:
+        update_data["theme_style"] = new_settings.new_theme
+
+    if update_data:
+        async with new_session() as session:
+            await session.execute(
+                update(UserSettings)
+                .where(UserSettings.employee_id == user_id)
+                .values(**update_data)
+            )
+            await session.commit()
+
+    return {"status": "success", "updated_fields": update_data}
+
+
