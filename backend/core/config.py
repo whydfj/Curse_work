@@ -11,8 +11,8 @@ load_dotenv(env_path)
 class EmailConfig:
     SMTP_SERVER = "smtp.yandex.ru"
     SMTP_PORT = 587
-    SENDER_EMAIL = os.getenv("EMAIL_USER")  # Ваш Gmail
-    SENDER_PASSWORD = os.getenv("EMAIL_PASSWORD")  # Пароль приложения
+    SENDER_EMAIL = os.getenv("EMAIL_USER")
+    SENDER_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 EMAIL_CONFIG = EmailConfig()
 

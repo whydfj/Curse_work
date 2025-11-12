@@ -39,16 +39,6 @@ async def found_user(user: User_Found_and_Delete_Schema):
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
 
-@router.delete("/found/delete", tags=["User Management"])
-async def delete_user(user: User_Found_and_Delete_Schema):
-    User = await methods.get_user_by_username(user.username)
-    if User is not None:
-        await methods.delete_user(user.username)
-        return {"status": True, "message": "Пользователь удален"}
-    else:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
-
-
 @router.get("/get_current_user", tags=["User Management"])
 async def current_user(current_user: dict = Depends(security.access_token_required)):
     users_id = int(dict(current_user)["sub"])

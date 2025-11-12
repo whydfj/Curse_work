@@ -50,10 +50,10 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from starlette.responses import RedirectResponse
 
-from backend.api import manager, user
+from backend.api import manager, user, admin
 
 app = FastAPI()
-
+app.include_router(admin.router)
 app.include_router(manager.router)
 app.include_router(user.router)
 
@@ -65,7 +65,7 @@ def UserSettings():
 
 @app.get("/mainWindowUser", tags=["UI"])
 def main_window_user():
-    return {"Всякие таски, хуяски"}
+    return {""}
 
 
 @app.get("/", tags=["UI"])

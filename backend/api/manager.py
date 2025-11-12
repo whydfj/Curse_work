@@ -19,33 +19,6 @@ async def is_manager(user_id):
         return users_role.scalar_one_or_none()
 
 
-@router.post("/create_user", tags=["User Management"])
-async def create_user(background_tasks: BackgroundTasks, user: User_Create_Schema, current_user: dict = Depends(security.access_token_required)):
-    user_id = int(dict(current_user)["sub"])
-    role = await is_manager(user_id)
-    if role != "manager":
-        raise HTTPException(status_code=401, detail="Извините, пользователей может создавать только менеджер!")
-    existing_user = await methods.get_user_by_username_or_email(user.username, user.email_user)
-
-    if existing_user:
-        raise HTTPException(status_code=405, detail="Пользователь с таким именем или email уже существует!")
-    if len(user.password) < 4:
-        raise HTTPException(status_code=400, detail="Длина пароля должна быть хотя бы 4")
-    new_user = await methods.create_user(user.username, user.password, user.role, user.name, user.surname, user.email_user)
-
-    background_tasks.add_task(
-        methods.send_registration_email,
-        user.email_user,
-        user.username,
-        user.password
-    )
-
-    return {
-        "status": True,
-        "message": "Пользователь создан успешно! Уведомление отправлено на email."
-    }
-
-
 @router.post("/add_task", tags=["Task Management"])
 async def add_task(task: Task_Schema):
     async with new_session() as session:
@@ -99,7 +72,7 @@ async def delete_task(task: Task_Delete_Schema, current_user: dict = Depends(sec
 
         role = await is_manager(int(dict(current_user)["sub"]))
 
-        if role != "manager":
+        if role != "manager" and role != "admin":
             raise HTTPException(status_code=403, detail="У вас нет доступа к данной функции")
 
         t = await session.execute(
@@ -133,7 +106,7 @@ async def get_user_tasks(username: str):
 async def get_all_tasks(current_user: dict = Depends(security.access_token_required)):
     user_id = int(dict(current_user)["sub"])
     role = await is_manager(user_id)
-    if role != "manager":
+    if role != "manager" and role != "admin":
         raise HTTPException(status_code=403, detail="Доступ запрещен")
     async with new_session() as session:
         all_tasks = await session.execute(
@@ -146,7 +119,7 @@ async def get_all_tasks(current_user: dict = Depends(security.access_token_requi
 async def update_deadline(deadline: Deadline_Set_Schema, current_user: dict = Depends(security.access_token_required)):
     user_id = int(dict(current_user)["sub"])
     role = await is_manager(user_id)
-    if role != "manager":
+    if role != "manager" and role != "admin":
         raise HTTPException(status_code=403, detail="Извините, у вас нет доступа к данной функции")
     async with new_session() as session:
         await session.execute(

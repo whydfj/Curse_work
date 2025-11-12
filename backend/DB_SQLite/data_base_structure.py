@@ -14,7 +14,7 @@ with sq.connect(DB_PATH) as con:
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         username varchar(60) UNIQUE,
         password_hash VARCHAR(256),
-        role TEXT CHECK(role IN ('manager', 'employee')) DEFAULT 'employee',
+        role TEXT CHECK(role IN ('manager', 'employee', 'admin')) DEFAULT 'employee',
         name varchar(45),
         surname varchar(45),
         created_at TEXT default (datetime('now','+3 hour')),
@@ -63,18 +63,22 @@ with sq.connect(DB_PATH) as con:
 
     cur.execute('''
         INSERT INTO Users(username,password_hash,role,name,surname,email_user)
-        VALUES('admin','344b8a854221bd1eaf9382daaea1996fbcd496f158e983f8835c7ef5084c55bb','manager','Ivan','Ivanov','skorpy729@gmail.com')
+        VALUES('admin','344b8a854221bd1eaf9382daaea1996fbcd496f158e983f8835c7ef5084c55bb','admin','Ivan','Ivanov','1')
     ''')#пароль для админа - password
     cur.execute('''
+            INSERT INTO Users(username,password_hash,role,name,surname,email_user)
+            VALUES('manager','344b8a854221bd1eaf9382daaea1996fbcd496f158e983f8835c7ef5084c55bb','manager','Aleksandr','Aleksandrow','2')
+        ''')  # пароль для админа - password
+    cur.execute('''
         INSERT INTO Users(username,password_hash,role,name,surname,email_user)
-        VALUES('user','4361be62001d25deb2bd85fab3e46011afae57539026d8d37d57f45e29571271','employee','Aleksander','Shnaider','globalfetish666@gmail.com')
+        VALUES('user','4361be62001d25deb2bd85fab3e46011afae57539026d8d37d57f45e29571271','employee','Aleksander','Shnaider','3')
     ''')#пароль для user 123456
-    cur.execute('''
-        INSERT INTO User_settings(employee_id,avatar)
-        VALUES('1','None')
-        ''')  # пароль для админа - password
-    cur.execute('''
-        INSERT INTO User_settings(employee_id,avatar)
-        VALUES('2','None')
-        ''')  # пароль для админа - password
+    #cur.execute('''
+    #    INSERT INTO User_settings(employee_id,avatar)
+    #    VALUES('1','None')
+    #    ''')
+    #cur.execute('''
+    #    INSERT INTO User_settings(employee_id,avatar)
+    #    VALUES('2','None')
+    #    ''')
 

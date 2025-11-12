@@ -1,6 +1,7 @@
 import smtplib
 
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, delete
+from sqlalchemy.orm import selectinload
 
 from backend.DB_SQLite.data_base_work import Users, Tasks, Comment, new_session, UserSettings
 from Password_hash import passwordHash
@@ -142,16 +143,31 @@ class DatabaseManager:
     @staticmethod
     async def delete_user(username):
         async with new_session() as s:
-            user_to_delete = await s.execute(
-                select(Users)
-                .where(Users.username == username)  # type: ignore
-            )
-            user_to_delete = user_to_delete.scalar_one_or_none()
-            if user_to_delete is None:
-                return None
-            await s.delete(user_to_delete)
-            await s.commit()
-            return True
+            try:
+                # Сначала находим ID пользователя
+                user_id_result = await s.execute(
+                    select(Users.id).where(Users.username == username)
+                )
+                user_id = user_id_result.scalar_one_or_none()
+
+                if user_id is None:
+                    return None
+
+                await s.execute(
+                    delete(UserSettings).where(UserSettings.employee_id == user_id)
+                )
+
+                await s.execute(
+                    delete(Users).where(Users.id == user_id)
+                )
+
+                await s.commit()
+                return True
+
+            except Exception as e:
+                await s.rollback()
+                print(f"Error deleting user {username}: {e}")
+                return False
 
     @staticmethod
     async def number_of_all_users():
@@ -189,7 +205,7 @@ class DatabaseManager:
             if task is None:
                 return None
 
-            if user.role != "manager":
+            if user.role != "manager" and user.role != "admin":
                 if task.employee_id != user_id:
                     return None
             new_comment = Comment(
@@ -220,7 +236,7 @@ class DatabaseManager:
             if task is None:
                 return None
 
-            if user.role != "manager":
+            if user.role != "manager" and user.role != "admin":
                 if task.employee_id != user_id:
                     return None
 
@@ -253,7 +269,7 @@ class DatabaseManager:
             if user is None:
                 return None
 
-            if user.role != "manager" and comment.user_id != user_id:
+            if user.role != "manager" and comment.user_id != user_id and user.role != "admin" :
                 return None
 
             await s.delete(comment)
