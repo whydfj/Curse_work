@@ -35,3 +35,7 @@ class Update_Settings_Schema(BaseModel):
     new_lang: Optional[str] = None
     new_theme: Optional[int] = None
 
+
+class AI_Request_Schema(BaseModel):
+    question: str
+
