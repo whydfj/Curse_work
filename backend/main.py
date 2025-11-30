@@ -54,7 +54,19 @@ from starlette.responses import RedirectResponse
 from backend.api import manager, user, admin
 from backend.api.ai_assistant import ai_chat
 
+from authx.exceptions import MissingTokenError
+
 app = FastAPI()
+
+
+@app.exception_handler(MissingTokenError)
+async def missing_token_handler(request, exc: MissingTokenError):
+    raise HTTPException(
+        status_code=401,
+        detail="Not authenticated: access token is missing",
+    )
+
+
 app.include_router(admin.router)
 app.include_router(manager.router)
 app.include_router(user.router)
