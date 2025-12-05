@@ -1,30 +1,36 @@
 Curse_work/
 │
-├── backend/                             # Главная папка приложения
+├── backend/
 │   │
-│   ├── api/                             # Эндпоинты (роутеры FastAPI)
-│   │   ├── manager.py                   # Роуты и логика для менеджера
-│   │   └── user.py                      # Роуты и логика для пользователя
+│   ├── api/
+│   │   ├── manager.py
+│   │   ├── admin.py
+│   │   └── user.py
 │   │
-│   ├── core/                            # Базовые настройки и безопасность
-│   │   ├── config.py                    # Настройки приложения, пути, env
-│   │   └── security.py                  # Хэширование, JWT, авторизация
+│   ├── core/
+│   │   ├── config.py
+│   │   └── security.py
 │   │
-│   ├── DB_SQLite/                       # Работа с базой данных SQLite
-│   │   ├── Coursework.db                # Файл базы данных
-│   │   ├── data_base_structure.py       # ORM-модели SQLAlchemy
-│   │   ├── data_base_work.py            # Методы взаимодействия с БД
-│   │   └── database_shortcat.py         # Утилиты/шорткаты для БД
+│   ├── DB_SQLite/
+│   │   ├── Coursework.db
+│   │   ├── data_base_structure.py
+│   │   ├── data_base_work.py
+│   │   └── database_shortcat.py
 │   │
-│   ├── schemas/                         # Pydantic-схемы для запросов/ответов
-│   │   ├── tasks.py                     # Схемы задач
-│   │   └── users.py                     # Схемы пользователей
+│   ├── schemas/
+│   │   ├── tasks.py
+│   │   └── users.py
 │   │
-│   ├── test_api/                        # Тестовые эндпоинты или unit-тесты
+│   ├── test_api/
 │   │   ├── __init__.py
-│   │   └── main.py                      # Точка входа (FastAPI app)
 │   │
-│   └── __init__.py                      # Помечает пакет как модуль Python
+│   ├── main.py
+│   │
+│   └── __init__.py
+│
+├── static/
+│   └── index.html
+│
 │
 ├── .env
 ├── .gitignore                           # Игнорируемые файлы Git
